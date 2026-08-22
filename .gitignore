@@ -9,3 +9,6 @@ weights/*.pth
 
 uploads/
 test_outputs/
+
+invalid.txt
+test_images/
