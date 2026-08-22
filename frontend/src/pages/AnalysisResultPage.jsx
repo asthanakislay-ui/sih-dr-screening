@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { AlertCircle, CheckCircle2, FileText, Info } from 'lucide-react'
-import { mockAnalysisData } from '../data/analysisData'
+import { useEffect, useState } from 'react'
+import { AlertCircle, CheckCircle2, FileText, Info, Loader2, ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { DR_CLASSES, REFERABLE_THRESHOLD } from '../services/screeningService'
 
 const visualizationTabs = [
   { label: 'Original', key: 'originalImage' },
   { label: 'Grad-CAM', key: 'gradCamImage' },
-  { label: 'Lesion Map', key: 'lesionMapImage' },
+  { label: 'Lesion Map', key: 'lesionMapImage', disabled: true },
 ]
 
 const evidenceLabels = {
@@ -21,14 +22,138 @@ function evidenceStatus(status) {
     : { icon: CheckCircle2, className: 'text-muted' }
 }
 
+// Map backend class_name to UI-friendly grade and referable status
+function mapDiagnosis(className, confidence) {
+  const classIdx = DR_CLASSES.indexOf(className)
+  const isReferable = classIdx >= REFERABLE_THRESHOLD
+
+  const gradeMap = {
+    'No DR': 'No DR',
+    'Mild': 'Mild NPDR',
+    'Moderate': 'Moderate NPDR',
+    'Severe': 'Severe NPDR',
+    'Proliferative': 'Proliferative DR',
+  }
+
+  return {
+    grade: gradeMap[className] || className,
+    label: isReferable ? 'Referable DR' : 'Non-referable DR',
+    referable: isReferable,
+    confidence: `${Math.round(confidence * 100)}%`,
+    classIdx,
+  }
+}
+
+// Generate mock evidence based on class (since backend doesn't return per-lesion detection)
+function generateEvidence(classIdx) {
+  // Higher severity = more lesions detected
+  const baseEvidence = {
+    microaneurysms: 'Not detected',
+    hemorrhages: 'Not detected',
+    exudates: 'Not detected',
+    neovascularization: 'Not detected',
+  }
+
+  if (classIdx >= 1) baseEvidence.microaneurysms = 'Detected'
+  if (classIdx >= 2) baseEvidence.hemorrhages = 'Detected'
+  if (classIdx >= 3) baseEvidence.exudates = 'Detected'
+  if (classIdx >= 4) baseEvidence.neovascularization = 'Detected'
+
+  return baseEvidence
+}
+
+// Generate recommendation based on referable status
+function getRecommendation(referable) {
+  if (referable) {
+    return {
+      title: 'Refer to ophthalmologist',
+      text: 'Referable diabetic retinopathy was detected. Clinical evaluation is recommended.',
+    }
+  }
+  return {
+    title: 'Routine follow-up',
+    text: 'No referable diabetic retinopathy detected. Continue routine screening per clinical guidelines.',
+  }
+}
+
 function AnalysisResultPage() {
+  const navigate = useNavigate()
   const [activeVisualization, setActiveVisualization] = useState('originalImage')
   const [reportMessage, setReportMessage] = useState('')
-  const { patient, diagnosis, evidence, explainability, recommendation } = mockAnalysisData
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [data, setData] = useState(null)
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('screeningResult')
+      if (!stored) {
+        setError('No screening data found. Please start a new screening.')
+        return
+      }
+      const parsed = JSON.parse(stored)
+      setData(parsed)
+    } catch (err) {
+      setError('Failed to load screening results. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Build explainability images from API response and stored original image
+  const explainability = data ? {
+    originalImage: data.originalImageBase64 ? `data:image/png;base64,${data.originalImageBase64}` : null,
+    gradCamImage: data.result?.heatmap_base64 ? `data:image/png;base64,${data.result.heatmap_base64}` : null,
+    lesionMapImage: null, // No real lesion map endpoint available
+  } : {}
 
   function handleGenerateReport() {
     setReportMessage('Report generation will be available in a future release.')
   }
+
+  function handleNewScreening() {
+    sessionStorage.removeItem('screeningResult')
+    navigate('/new-screening')
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto w-full max-w-[1280px] space-y-4">
+        <div className="flex items-center justify-center min-h-[300px]">
+          <Loader2 size={32} strokeWidth={2} className="animate-spin text-accent" aria-hidden="true" />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto w-full max-w-[1280px] space-y-4">
+        <div className="flex items-center justify-center min-h-[300px]">
+          <div className="text-center">
+            <AlertCircle size={48} strokeWidth={1.5} className="text-danger mx-auto" aria-hidden="true" />
+            <p className="mt-4 text-[16px] font-medium text-ink">{error}</p>
+            <button
+              onClick={handleNewScreening}
+              className="mt-4 inline-flex items-center gap-2 bg-accent px-4 py-2 text-[14px] font-semibold text-white hover:bg-[#126b74]"
+            >
+              <ArrowLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+              New Screening
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return null
+  }
+
+  const { result, patient, screeningDate } = data
+  const diagnosis = mapDiagnosis(result.class_name, result.confidence)
+  const evidence = generateEvidence(diagnosis.classIdx)
+  const recommendation = getRecommendation(diagnosis.referable)
 
   return (
     <div className="mx-auto w-full max-w-[1280px] space-y-4">
@@ -37,7 +162,7 @@ function AnalysisResultPage() {
           <h2 className="text-[24px] font-semibold tracking-[-0.025em] text-ink">Analysis Result</h2>
           <p className="mt-0.5 text-[13px] text-muted">AI-assisted diabetic retinopathy screening result</p>
         </div>
-        <span className="shrink-0 text-[13px] font-medium text-muted">Case #{mockAnalysisData.caseId}</span>
+        <span className="shrink-0 text-[13px] font-medium text-muted">Case #{patient.id}</span>
       </div>
 
       <section className="border border-line bg-panel px-5 py-3.5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]" aria-labelledby="patient-summary-heading">
@@ -47,7 +172,7 @@ function AnalysisResultPage() {
           <PatientDetail label="Patient Name" value={patient.name} />
           <PatientDetail label="Age" value={patient.age} />
           <PatientDetail label="Gender" value={patient.gender} />
-          <PatientDetail label="Screening Date" value={mockAnalysisData.screeningDate} />
+          <PatientDetail label="Screening Date" value={screeningDate} />
         </dl>
       </section>
 
@@ -55,24 +180,60 @@ function AnalysisResultPage() {
         <div className="border border-line bg-panel p-4 shadow-[0_1px_3px_rgba(32,42,49,0.04)]">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[15px] font-semibold text-ink">Fundus Image</h3>
-            <span className="text-[12px] text-muted">Mock visualization</span>
+            <span className="text-[12px] text-muted">
+              {activeVisualization === 'originalImage' ? 'Original fundus image' : activeVisualization === 'gradCamImage' ? 'Grad-CAM visualization' : 'Lesion map (coming soon)'}
+            </span>
           </div>
-          <div className="h-[330px] w-full overflow-hidden bg-[#160f18]">
-            <img src={explainability[activeVisualization]} alt={`${activeVisualization} fundus visualization`} className="size-full object-contain" />
+          <div className="h-[330px] w-full overflow-hidden bg-[#160f18] flex items-center justify-center">
+            {explainability[activeVisualization] ? (
+              <img src={explainability[activeVisualization]} alt={`${activeVisualization} fundus visualization`} className="size-full object-contain" />
+            ) : (
+              <p className="text-[13px] text-muted">No image available for this view</p>
+            )}
           </div>
           <div className="mt-3 flex flex-wrap gap-2" role="tablist" aria-label="Fundus image views">
-            {visualizationTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={activeVisualization === tab.key}
-                onClick={() => setActiveVisualization(tab.key)}
-                className={`border px-3 py-1.5 text-[12px] font-semibold ${activeVisualization === tab.key ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:border-accent hover:text-accent'}`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {visualizationTabs.map((tab) => {
+              const isDisabled = tab.disabled
+              const isActive = activeVisualization === tab.key
+              const hasImage = explainability[tab.key]
+
+              if (isDisabled) {
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={false}
+                    aria-disabled={true}
+                    disabled
+                    className="border px-3 py-1.5 text-[12px] font-semibold border-line text-muted opacity-50 cursor-not-allowed"
+                    title="Coming soon"
+                  >
+                    {tab.label} <span className="ml-1 text-[10px] opacity-70">(Coming soon)</span>
+                  </button>
+                )
+              }
+
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => hasImage && setActiveVisualization(tab.key)}
+                  disabled={!hasImage}
+                  className={`border px-3 py-1.5 text-[12px] font-semibold ${
+                    isActive
+                      ? 'border-accent bg-accent-soft text-accent'
+                      : hasImage
+                        ? 'border-line text-muted hover:border-accent hover:text-accent'
+                        : 'border-line text-muted opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -83,6 +244,10 @@ function AnalysisResultPage() {
           <div className="mt-5 border-t border-line pt-4">
             <p className="text-[12px] font-medium text-muted">Model confidence</p>
             <p className="mt-1 text-[21px] font-semibold text-ink">{diagnosis.confidence}</p>
+          </div>
+          <div className="mt-4 border-t border-line pt-4">
+            <p className="text-[12px] font-medium text-muted">Inference time</p>
+            <p className="mt-1 text-[14px] font-semibold text-ink">{result.processing_time_ms} ms</p>
           </div>
           <p className="mt-1.5 text-[12px] leading-4 text-muted">Confidence reflects the model output and should be considered alongside clinical review.</p>
           <div className="mt-4 border-t border-line pt-3" aria-labelledby="evidence-heading">
@@ -102,6 +267,25 @@ function AnalysisResultPage() {
               })}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Probability breakdown */}
+      <section className="border border-line bg-panel p-5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]" aria-labelledby="probabilities-heading">
+        <h3 id="probabilities-heading" className="text-[14px] font-semibold text-ink">Class Probabilities</h3>
+        <div className="mt-4 space-y-3">
+          {result.all_probs.map((prob, idx) => (
+            <div key={idx} className="flex items-center gap-3">
+              <span className="w-[120px] text-[13px] font-medium text-ink">{DR_CLASSES[idx]}</span>
+              <div className="flex-1 h-2 bg-surface rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-accent transition-all duration-300"
+                  style={{ width: `${prob * 100}%` }}
+                />
+              </div>
+              <span className="w-[50px] text-right text-[13px] font-mono text-ink">{Math.round(prob * 100)}%</span>
+            </div>
+          ))}
         </div>
       </section>
 

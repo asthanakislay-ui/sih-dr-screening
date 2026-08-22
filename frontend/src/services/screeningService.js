@@ -5,7 +5,9 @@
 // does not return. Errors are surfaced to the caller as plain Error
 // instances with helpful messages — never silently swallowed.
 
-const PREDICT_URL = 'http://localhost:8000/predict'
+// Use Vite environment variable with fallback for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const PREDICT_URL = `${API_BASE_URL}/predict`
 
 /**
  * Submit a fundus image to the backend for DR grading + Grad-CAM overlay.

@@ -1,4 +1,4 @@
-import { FileImage, UploadCloud, X } from 'lucide-react'
+import { FileImage, UploadCloud, X, Loader2, AlertCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -7,6 +7,7 @@ import {
   maxImageSize,
   screeningFieldDefaults,
 } from '../data/screeningData'
+import { predictScreening } from '../services/screeningService'
 
 const initialErrors = {}
 
@@ -23,6 +24,8 @@ function NewScreeningPage() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [isDragging, setIsDragging] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [apiError, setApiError] = useState('')
 
   useEffect(() => {
     return () => {
@@ -90,9 +93,45 @@ function NewScreeningPage() {
     return Object.keys(nextErrors).length === 0
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    if (validateForm()) navigate('/analysis-result')
+    if (!validateForm()) return
+
+    setIsAnalyzing(true)
+    setApiError('')
+
+    try {
+      // Convert the selected file to base64 for storage
+      const originalImageBase64 = await fileToBase64(selectedFile)
+
+      const result = await predictScreening(selectedFile)
+      // Store result, patient data, AND original image in sessionStorage for the result page
+      sessionStorage.setItem('screeningResult', JSON.stringify({
+        result,
+        patient: {
+          id: fields.patientId,
+          name: fields.fullName,
+          age: fields.age,
+          gender: fields.gender,
+        },
+        screeningDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        originalImageBase64,
+      }))
+      navigate('/analysis-result')
+    } catch (err) {
+      setApiError(err.message || 'An unexpected error occurred. Please try again.')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result.split(',')[1]) // Remove data URL prefix
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
   }
 
   return (
@@ -164,9 +203,21 @@ function NewScreeningPage() {
           {selectedFile && !errors.image && <p className="mt-4 border-l-2 border-accent bg-accent-soft px-3 py-2.5 text-[13px] text-ink">Image ready for analysis</p>}
         </section>
 
+        {apiError && (
+          <div className="flex items-center gap-2 border border-danger bg-[#fff5f5] px-4 py-3 text-[13px] text-danger" role="alert">
+            <AlertCircle size={16} strokeWidth={1.8} aria-hidden="true" />
+            <span>{apiError}</span>
+          </div>
+        )}
+
         <div className="flex justify-end">
-          <button type="submit" disabled={!canAnalyze} className="inline-flex items-center justify-center bg-accent px-5 py-2.5 text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(23,126,137,0.2)] transition-colors hover:bg-[#126b74] disabled:cursor-not-allowed disabled:bg-[#a8c8cb]">
-            Analyze Image
+          <button
+            type="submit"
+            disabled={!canAnalyze || isAnalyzing}
+            className="inline-flex items-center justify-center gap-2 bg-accent px-5 py-2.5 text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(23,126,137,0.2)] transition-colors hover:bg-[#126b74] disabled:cursor-not-allowed disabled:bg-[#a8c8cb]"
+          >
+            {isAnalyzing && <Loader2 size={16} strokeWidth={2} className="animate-spin" aria-hidden="true" />}
+            {isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
           </button>
         </div>
       </form>
