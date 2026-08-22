@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+
+weights/*.pth
+
+.env
+*.log
+
+uploads/
+test_outputs/
