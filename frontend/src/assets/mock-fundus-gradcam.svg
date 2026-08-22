@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Mock Grad-CAM fundus visualization">
+  <rect width="800" height="600" fill="#160f18"/>
+  <ellipse cx="400" cy="300" rx="330" ry="255" fill="#7b2630"/>
+  <ellipse cx="400" cy="300" rx="285" ry="220" fill="#a43c42"/>
+  <circle cx="535" cy="270" r="62" fill="#e6a46c" opacity=".9"/>
+  <g fill="none" stroke="#cf6260" stroke-linecap="round" opacity=".7">
+    <path d="M535 270C465 278 408 310 330 360S210 422 112 438" stroke-width="8"/>
+    <path d="M535 270C455 248 375 220 296 158S190 104 126 92" stroke-width="7"/>
+    <path d="M485 283C414 350 380 420 354 505" stroke-width="6"/>
+    <path d="M465 256C414 195 375 140 355 75" stroke-width="5"/>
+  </g>
+  <circle cx="360" cy="350" r="105" fill="#ef6b3d" opacity=".2"/>
+  <circle cx="360" cy="350" r="68" fill="#ffb03a" opacity=".27"/>
+  <circle cx="265" cy="185" r="72" fill="#ef6b3d" opacity=".16"/>
+  <circle cx="265" cy="185" r="38" fill="#ffb03a" opacity=".23"/>
+  <ellipse cx="400" cy="300" rx="330" ry="255" fill="none" stroke="#d87968" stroke-width="3" opacity=".55"/>
+</svg>

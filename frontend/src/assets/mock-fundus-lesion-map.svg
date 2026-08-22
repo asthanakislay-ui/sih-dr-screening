@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Mock lesion map fundus visualization">
+  <rect width="800" height="600" fill="#160f18"/>
+  <ellipse cx="400" cy="300" rx="330" ry="255" fill="#7b2630"/>
+  <ellipse cx="400" cy="300" rx="285" ry="220" fill="#a43c42"/>
+  <circle cx="535" cy="270" r="62" fill="#e6a46c" opacity=".9"/>
+  <g fill="none" stroke="#cf6260" stroke-linecap="round" opacity=".7">
+    <path d="M535 270C465 278 408 310 330 360S210 422 112 438" stroke-width="8"/>
+    <path d="M535 270C455 248 375 220 296 158S190 104 126 92" stroke-width="7"/>
+    <path d="M485 283C414 350 380 420 354 505" stroke-width="6"/>
+    <path d="M465 256C414 195 375 140 355 75" stroke-width="5"/>
+  </g>
+  <g fill="#edb24b" opacity=".88">
+    <circle cx="340" cy="354" r="9"/><circle cx="306" cy="374" r="6"/><circle cx="277" cy="393" r="8"/>
+    <circle cx="289" cy="184" r="7"/><circle cx="261" cy="198" r="5"/><circle cx="238" cy="214" r="8"/>
+  </g>
+  <g fill="none" stroke="#f4d47e" stroke-width="3" opacity=".82">
+    <ellipse cx="340" cy="354" rx="32" ry="22"/><ellipse cx="277" cy="393" rx="25" ry="17"/>
+    <ellipse cx="289" cy="184" rx="24" ry="18"/><ellipse cx="238" cy="214" rx="28" ry="19"/>
+  </g>
+  <ellipse cx="400" cy="300" rx="330" ry="255" fill="none" stroke="#d87968" stroke-width="3" opacity=".55"/>
+</svg>
