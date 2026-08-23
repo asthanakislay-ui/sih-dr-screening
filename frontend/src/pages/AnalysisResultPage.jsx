@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AlertCircle, CheckCircle2, FileText, Info, Loader2, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { DR_CLASSES, REFERABLE_THRESHOLD } from '../services/screeningService'
+import { openReportPrintDialog } from '../utils/generateReport'
 
 const visualizationTabs = [
   { label: 'Original', key: 'originalImage' },
@@ -80,6 +81,8 @@ function AnalysisResultPage() {
   const navigate = useNavigate()
   const [activeVisualization, setActiveVisualization] = useState('originalImage')
   const [reportMessage, setReportMessage] = useState('')
+  const [isReportError, setIsReportError] = useState(false)
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [data, setData] = useState(null)
@@ -107,8 +110,44 @@ function AnalysisResultPage() {
     lesionMapImage: null, // No real lesion map endpoint available
   } : {}
 
-  function handleGenerateReport() {
-    setReportMessage('Report generation will be available in a future release.')
+  async function handleGenerateReport() {
+    if (isGeneratingReport || !data) return
+    setIsGeneratingReport(true)
+    setIsReportError(false)
+    setReportMessage('Preparing report…')
+
+    // Defer one frame so the button can switch to its loading state before
+    // the (synchronous-feeling) print dialog blocks the main thread.
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+
+    try {
+      const reportData = data
+      const safePatient = reportData.patient || null
+      const resultForReport = reportData.result
+      const diagnosis = resultForReport
+        ? mapDiagnosis(resultForReport.class_name, resultForReport.confidence)
+        : null
+      const evidence = diagnosis ? generateEvidence(diagnosis.classIdx) : null
+      const recommendation = diagnosis ? getRecommendation(diagnosis.referable) : null
+
+      await openReportPrintDialog({
+        data: { ...reportData, patient: safePatient },
+        diagnosis,
+        evidence,
+        recommendation,
+        title: `DR Screening Report — ${safePatient?.id || 'Case'}`,
+      })
+      setReportMessage('Report ready — use your browser’s “Save as PDF” option to download.')
+    } catch (err) {
+      setIsReportError(true)
+      setReportMessage(
+        err && err.message
+          ? `Could not generate report: ${err.message}`
+          : 'Could not generate report. Please try again.',
+      )
+    } finally {
+      setIsGeneratingReport(false)
+    }
   }
 
   function handleNewScreening() {
@@ -156,8 +195,8 @@ function AnalysisResultPage() {
   const recommendation = getRecommendation(diagnosis.referable)
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] space-y-4">
-      <div className="flex items-center justify-between gap-4">
+    <div className="ar-shell mx-auto w-full max-w-[1280px] space-y-4">
+      <div className="ar-section--head flex items-center justify-between gap-4">
         <div>
           <h2 className="text-[24px] font-semibold tracking-[-0.025em] text-ink">Analysis Result</h2>
           <p className="mt-0.5 text-[13px] text-muted">AI-assisted diabetic retinopathy screening result</p>
@@ -165,7 +204,7 @@ function AnalysisResultPage() {
         <span className="shrink-0 text-[13px] font-medium text-muted">Case #{patient.id}</span>
       </div>
 
-      <section className="border border-line bg-panel px-5 py-3.5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]" aria-labelledby="patient-summary-heading">
+      <section className="ar-section--summary border border-line bg-panel px-5 py-3.5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]" aria-labelledby="patient-summary-heading">
         <h3 id="patient-summary-heading" className="sr-only">Patient Information</h3>
         <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <PatientDetail label="Patient ID" value={patient.id} />
@@ -176,7 +215,7 @@ function AnalysisResultPage() {
         </dl>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.8fr)]" aria-label="Analysis result">
+      <section className="ar-section--viz grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.8fr)]" aria-label="Analysis result">
         <div className="border border-line bg-panel p-4 shadow-[0_1px_3px_rgba(32,42,49,0.04)]">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[15px] font-semibold text-ink">Fundus Image</h3>
@@ -186,7 +225,12 @@ function AnalysisResultPage() {
           </div>
           <div className="h-[330px] w-full overflow-hidden bg-[#160f18] flex items-center justify-center">
             {explainability[activeVisualization] ? (
-              <img src={explainability[activeVisualization]} alt={`${activeVisualization} fundus visualization`} className="size-full object-contain" />
+              <img
+                key={activeVisualization}
+                src={explainability[activeVisualization]}
+                alt={`${activeVisualization} fundus visualization`}
+                className="ar-viz-image size-full object-contain"
+              />
             ) : (
               <p className="text-[13px] text-muted">No image available for this view</p>
             )}
@@ -271,7 +315,7 @@ function AnalysisResultPage() {
       </section>
 
       {/* Probability breakdown */}
-      <section className="border border-line bg-panel p-5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]" aria-labelledby="probabilities-heading">
+      <section className="ar-section--probs border border-line bg-panel p-5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]" aria-labelledby="probabilities-heading">
         <h3 id="probabilities-heading" className="text-[14px] font-semibold text-ink">Class Probabilities</h3>
         <div className="mt-4 space-y-3">
           {result.all_probs.map((prob, idx) => (
@@ -279,7 +323,7 @@ function AnalysisResultPage() {
               <span className="w-[120px] text-[13px] font-medium text-ink">{DR_CLASSES[idx]}</span>
               <div className="flex-1 h-2 bg-surface rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-accent transition-all duration-300"
+                  className="ar-prob-fill h-full bg-accent transition-all duration-300"
                   style={{ width: `${prob * 100}%` }}
                 />
               </div>
@@ -307,18 +351,34 @@ function AnalysisResultPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-5 border border-[#e8d6d6] bg-[#fffafa] p-6 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="recommendation-heading">
+      <section className="ar-section--rec flex flex-col gap-5 border border-[#e8d6d6] bg-[#fffafa] p-6 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="recommendation-heading">
         <div>
           <h3 id="recommendation-heading" className="text-[16px] font-semibold text-ink">Recommendation</h3>
           <p className="mt-2 text-[15px] font-semibold text-danger">{recommendation.title}</p>
           <p className="mt-1 text-[13px] text-muted">{recommendation.text}</p>
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-          <button type="button" onClick={handleGenerateReport} className="inline-flex items-center gap-2 border border-line bg-panel px-4 py-2.5 text-[13px] font-semibold text-ink shadow-[0_1px_2px_rgba(32,42,49,0.06)] hover:border-accent hover:text-accent">
-            <FileText size={16} strokeWidth={1.8} aria-hidden="true" />
-            Generate Report
+          <button
+            type="button"
+            onClick={handleGenerateReport}
+            disabled={isGeneratingReport}
+            className="ar-report-btn inline-flex items-center gap-2 border border-line bg-panel px-4 py-2.5 text-[13px] font-semibold text-ink shadow-[0_1px_2px_rgba(32,42,49,0.06)] hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isGeneratingReport ? (
+              <Loader2 size={16} strokeWidth={1.8} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <FileText size={16} strokeWidth={1.8} aria-hidden="true" />
+            )}
+            {isGeneratingReport ? 'Generating…' : 'Generate Report'}
           </button>
-          {reportMessage && <p className="text-[12px] text-muted" role="status">{reportMessage}</p>}
+          {reportMessage && (
+            <p
+              className={`text-[12px] ${isReportError ? 'text-danger' : 'text-muted'}`}
+              role={isReportError ? 'alert' : 'status'}
+            >
+              {reportMessage}
+            </p>
+          )}
         </div>
       </section>
     </div>

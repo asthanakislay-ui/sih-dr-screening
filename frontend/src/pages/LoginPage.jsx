@@ -1,18 +1,58 @@
 import { useState } from 'react'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import fundusOriginal from '../assets/fundus-bg.png'
 import fundusGradcam from '../assets/mock-fundus-gradcam.svg'
+import { useAuth } from '../context/AuthContext'
+
+// Demo-only authentication. Backend auth is not implemented; any non-empty
+// email-shaped identifier and any non-empty password is accepted for the
+// purpose of moving the user into the dashboard.
+function isValidEmailLike(value) {
+  if (!value) return false
+  // Accept either a basic email shape or a clinician id (alphanumeric + dash/underscore).
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /^[A-Za-z0-9_-]{3,}$/.test(value)
+}
 
 function LoginPage() {
+  const navigate = useNavigate()
+  const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
+  function validate() {
+    const next = {}
+    if (!email.trim()) {
+      next.email = 'Enter your email or clinician ID.'
+    } else if (!isValidEmailLike(email.trim())) {
+      next.email = 'Enter a valid email or clinician ID.'
+    }
+    if (!password) {
+      next.password = 'Enter your password.'
+    } else if (password.length < 4) {
+      next.password = 'Password must be at least 4 characters.'
+    }
+    return next
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    // Authentication is not implemented yet — this is a placeholder behaviour.
+    const nextErrors = validate()
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+
+    setIsSubmitting(true)
     setSubmitted(true)
+    // Demo: small delay so the "Opening workspace…" state is visible.
+    setTimeout(() => {
+      signIn({ email: email.trim() })
+      setIsSubmitting(false)
+      navigate('/', { replace: true })
+    }, 350)
   }
 
   return (
@@ -117,48 +157,11 @@ function LoginPage() {
       {/* Editorial + form */}
       <main className="login-stage">
         <section className="login-editorial" aria-label="Product introduction">
-          
 
           <h1 className="login-headline">
             <span className="login-headline-white">See deeper.</span>
             <span className="login-headline-teal">Screen earlier.</span>
           </h1>
-
-          {/* <p className="login-lede">
-            Explainable AI for diabetic retinopathy screening.
-            <br />
-            Built for primary care teams in rural India.
-          </p>
-
-          <ul className="login-features">
-            <li>
-              <span className="login-feature-bullet" aria-hidden="true" />
-              <div>
-                <p className="login-feature-title">AI Classification</p>
-                <p className="login-feature-desc">
-                  Five-grade DR severity from a single fundus photograph.
-                </p>
-              </div>
-            </li>
-            <li>
-              <span className="login-feature-bullet" aria-hidden="true" />
-              <div>
-                <p className="login-feature-title">Model Transparency</p>
-                <p className="login-feature-desc">
-                  Grad-CAM heatmaps show where the model is looking.
-                </p>
-              </div>
-            </li>
-            <li>
-              <span className="login-feature-bullet" aria-hidden="true" />
-              <div>
-                <p className="login-feature-title">Field Ready</p>
-                <p className="login-feature-desc">
-                  Designed for ASHA workers and PHC clinicians on low bandwidth.
-                </p>
-              </div>
-            </li>
-          </ul> */}
 
           {/* Model Attention preview */}
           <aside className="login-attention" aria-label="Model attention preview">
@@ -199,27 +202,36 @@ function LoginPage() {
                 <label htmlFor="login-email" className="login-label">
                   Email or Clinician ID
                 </label>
-               <div className="login-input-row">
-                <input
-                  id="login-email"
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  inputMode="email"
-                  required
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="name@phc.gov.in"
-                  className="login-input"
-                />
-               </div>
-                
+                <div className="login-input-row">
+                  <input
+                    id="login-email"
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    inputMode="email"
+                    required
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value)
+                      if (errors.email) setErrors((current) => ({ ...current, email: '' }))
+                    }}
+                    placeholder="name@phc.gov.in"
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? 'login-email-error' : undefined}
+                    className="login-input"
+                  />
+                </div>
+                {errors.email && (
+                  <p id="login-email-error" className="login-field-error" role="alert">
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               <div className="login-field">
                 <label htmlFor="login-password" className="login-label">
                   <span>Password</span>
-                  <a href="#" className="login-link" tabIndex={-1}>
+                  <a href="#" className="login-link" tabIndex={-1} onClick={(event) => event.preventDefault()}>
                     Forgot?
                   </a>
                 </label>
@@ -231,8 +243,13 @@ function LoginPage() {
                     autoComplete="current-password"
                     required
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      if (errors.password) setErrors((current) => ({ ...current, password: '' }))
+                    }}
                     placeholder="••••••••"
+                    aria-invalid={Boolean(errors.password)}
+                    aria-describedby={errors.password ? 'login-password-error' : undefined}
                     className="login-input"
                   />
                   <button
@@ -249,6 +266,11 @@ function LoginPage() {
                     )}
                   </button>
                 </div>
+                {errors.password && (
+                  <p id="login-password-error" className="login-field-error" role="alert">
+                    {errors.password}
+                  </p>
+                )}
               </div>
 
               <label className="login-check">
@@ -258,22 +280,23 @@ function LoginPage() {
 
               <button
                 type="submit"
-                className={`login-submit ${submitted ? 'login-submit-sent' : ''}`}
+                disabled={isSubmitting}
+                className={`login-submit ${submitted && !isSubmitting ? 'login-submit-sent' : ''}`}
               >
-                <span>{submitted ? 'Opening workspace…' : 'Sign in to RETINA'}</span>
+                <span>{isSubmitting ? 'Opening workspace…' : 'Sign in to RETINA'}</span>
                 <ArrowRight size={17} strokeWidth={1.9} aria-hidden="true" />
               </button>
 
-              {submitted && (
+              {submitted && !isSubmitting && (
                 <p className="login-temp-note" role="status">
-                  Authentication isn&apos;t connected yet — this is a placeholder action.
+                  Demo session — backend authentication is not connected.
                 </p>
               )}
             </form>
 
             <div className="login-form-foot">
               <span>New to the programme?</span>
-              <a href="#" className="login-link login-link-strong">
+              <a href="#" className="login-link login-link-strong" onClick={(event) => event.preventDefault()}>
                 Request clinician access
               </a>
             </div>
