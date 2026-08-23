@@ -1,4 +1,4 @@
-import { Activity, Bell, ClipboardPlus, HelpCircle, History, LayoutDashboard, LifeBuoy, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import {  Bell, ClipboardPlus, HelpCircle, History, LayoutDashboard, LifeBuoy, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useSidebar } from '../context/SidebarContext'
 
@@ -24,23 +24,76 @@ function Sidebar() {
           collapsed ? 'justify-center px-2' : 'px-6'
         }`}
       >
-        <div
-          className={`flex shrink-0 items-center justify-center rounded-lg bg-[rgba(18,199,200,0.12)] text-[#12C7C8] ${
-            collapsed ? 'size-10' : 'size-9'
-          }`}
-        >
-          <Activity size={19} strokeWidth={2} aria-hidden="true" />
-        </div>
-        {!collapsed && (
-          <div className="flex min-w-0 flex-col leading-tight">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-[#8FA3B2]">
-              Retina
-            </span>
-            <span className="text-[14px] font-semibold tracking-[0.22em] text-white">
-              DR SCREENING
-            </span>
-          </div>
-        )}
+       <div className="flex shrink-0 items-center justify-center">
+  <svg
+    viewBox="0 0 32 32"
+    className="size-9"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <circle
+      cx="16"
+      cy="16"
+      r="14"
+      fill="none"
+      stroke="#12C7C8"
+      strokeWidth="1.4"
+    />
+    <circle
+      cx="16"
+      cy="16"
+      r="8"
+      fill="none"
+      stroke="#12C7C8"
+      strokeWidth="1.4"
+    />
+    <circle
+      cx="16"
+      cy="16"
+      r="2"
+      fill="#12C7C8"
+    />
+    <line
+      x1="16"
+      y1="2"
+      x2="16"
+      y2="6"
+      stroke="#12C7C8"
+      strokeWidth="1.4"
+    />
+    <line
+      x1="16"
+      y1="26"
+      x2="16"
+      y2="30"
+      stroke="#12C7C8"
+      strokeWidth="1.4"
+    />
+    <line
+      x1="2"
+      y1="16"
+      x2="6"
+      y2="16"
+      stroke="#12C7C8"
+      strokeWidth="1.4"
+    />
+    <line
+      x1="26"
+      y1="16"
+      x2="30"
+      y2="16"
+      stroke="#12C7C8"
+      strokeWidth="1.4"
+    />
+  </svg>
+</div>
+
+{!collapsed && (
+  <span className="text-[15px] font-semibold uppercase tracking-[0.34em] text-white">
+    RETINA
+  </span>
+)}
+        
       </div>
 
       {/* Collapse / expand control */}
