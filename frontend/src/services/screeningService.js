@@ -1,33 +1,17 @@
 // screeningService.js
 //
-// Thin service layer that talks to the FastAPI DR screening backend.
-// Only sends the uploaded image; does not invent fields the backend
-// does not return. Errors are surfaced to the caller as plain Error
-// instances with helpful messages — never silently swallowed.
+// Thin service layer that talks to both the FastAPI AI service and the Node/Express backend.
+// Errors are surfaced to the caller as plain Error instances with helpful messages.
 
-// Use Vite environment variable with fallback for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const PREDICT_URL = `${API_BASE_URL}/predict`
+// Use Vite environment variables with fallbacks for development
+const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'http://localhost:8000'
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000'
+
+const PREDICT_URL = `${AI_BASE_URL}/predict`
+const API_URL = `${BACKEND_BASE_URL}/api`
 
 /**
- * Submit a fundus image to the backend for DR grading + Grad-CAM overlay.
- *
- * @param {File|Blob} file - The image to analyze (PNG / JPG / JPEG).
- *   Must be supplied by the caller as the actual File object from an
- *   <input type="file" /> or a drag-drop event — not a path or URL.
- * @returns {Promise<{
- *   class_idx: number,
- *   class_name: string,
- *   confidence: number,
- *   all_probs: number[],
- *   heatmap_base64: string,
- *   processing_time_ms: number,
- * }>}
- *   Resolves with the backend's response verbatim. No extra fields
- *   are fabricated here.
- * @throws {Error} With a `.status` property when the backend returns a
- *   non-2xx response (400, 500, etc.), or without `.status` when the
- *   network call itself fails (backend unreachable, CORS, abort, etc.).
+ * Submit a fundus image to the FastAPI backend for DR grading + Grad-CAM overlay.
  */
 export async function predictScreening(file) {
   if (!file) {
@@ -35,7 +19,6 @@ export async function predictScreening(file) {
   }
 
   const formData = new FormData()
-  // Field name MUST be exactly "file" — matches the backend's UploadFile.
   formData.append('file', file)
 
   let response
@@ -43,22 +26,15 @@ export async function predictScreening(file) {
     response = await fetch(PREDICT_URL, {
       method: 'POST',
       body: formData,
-      // Do NOT set 'Content-Type' here — the browser must add the
-      // multipart boundary itself for FormData uploads.
     })
   } catch (networkError) {
-    // fetch() rejects on connectivity failures (backend down, DNS,
-    // CORS preflight rejection that didn't surface as a status, etc.).
     throw new Error(
-      `Could not reach the screening API at ${PREDICT_URL}. ` +
-        `Is the backend running? (${networkError.message})`,
+      `Could not reach the AI service at ${PREDICT_URL}. ` +
+        `Is the FastAPI service running? (${networkError.message})`,
     )
   }
 
   if (!response.ok) {
-    // Backend returns {"detail": {"error": "..."}} for 400 and
-    // {"detail": "Model inference error: ..."} for 500. Try to
-    // surface that detail; fall back to status + statusText.
     let detail = ''
     try {
       const errBody = await response.json()
@@ -72,17 +48,12 @@ export async function predictScreening(file) {
       // body wasn't JSON; ignore
     }
 
-    const message =
-      detail ||
-      `Screening API returned HTTP ${response.status} ${response.statusText}`
-
+    const message = detail || `AI Service returned HTTP ${response.status} ${response.statusText}`
     const err = new Error(message)
     err.status = response.status
     throw err
   }
 
-  // Happy path: parse and return the contract fields the backend
-  // promises. We don't reshape, rename, or augment the response.
   const data = await response.json()
 
   return {
@@ -95,8 +66,98 @@ export async function predictScreening(file) {
   }
 }
 
-// DR severity classes, in the exact order the backend emits them.
-// 0 = No DR, 1 = Mild, 2 = Moderate, 3 = Severe, 4 = Proliferative.
-// Referable DR is class_idx >= 2.
+/**
+ * Backend Authentication: Login
+ */
+export async function login(email, password) {
+  const response = await fetch(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  })
+
+  if (!response.ok) {
+    const errBody = await response.json()
+    throw new Error(errBody.message || 'Login failed')
+  }
+
+  return response.json() // Returns { success, user, token }
+}
+
+/**
+ * Backend Authentication: Register
+ */
+export async function register(name, email, password) {
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password }),
+  })
+
+  if (!response.ok) {
+    const errBody = await response.json()
+    throw new Error(errBody.message || 'Registration failed')
+  }
+
+  return response.json()
+}
+
+/**
+ * Save a screening record to MongoDB.
+ * Expects a FormData object containing the image and JSON fields.
+ */
+export async function saveScreening(formData, token) {
+  const response = await fetch(`${API_URL}/screenings`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errBody = await response.json()
+    throw new Error(errBody.message || 'Failed to save screening')
+  }
+
+  return response.json()
+}
+
+/**
+ * Fetch all screenings for the authenticated user.
+ */
+export async function getScreenings(token) {
+  const response = await fetch(`${API_URL}/screenings`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errBody = await response.json()
+    throw new Error(errBody.message || 'Failed to fetch screenings')
+  }
+
+  return response.json()
+}
+
+/**
+ * Fetch a single screening by ID.
+ */
+export async function getScreeningById(id, token) {
+  const response = await fetch(`${API_URL}/screenings/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errBody = await response.json()
+    throw new Error(errBody.message || 'Failed to fetch screening details')
+  }
+
+  return response.json()
+}
+
 export const DR_CLASSES = ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative']
 export const REFERABLE_THRESHOLD = 2

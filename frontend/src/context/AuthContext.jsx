@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { login } from '../services/screeningService'
 
 const STORAGE_KEY = 'retina-auth'
-// Demo-only authentication flag. Backend auth is not implemented.
+
 const AuthContext = createContext(null)
 
 function readStoredSession() {
@@ -12,7 +13,7 @@ function readStoredSession() {
     const parsed = JSON.parse(raw)
     if (parsed && parsed.authenticated) return parsed
   } catch (error) {
-    // localStorage may be unavailable — fall back to not authenticated
+    // localStorage may be unavailable
   }
   return null
 }
@@ -32,12 +33,18 @@ export function AuthProvider({ children }) {
     }
   }, [session])
 
-  const signIn = useCallback(({ email }) => {
-    setSession({
-      authenticated: true,
-      email: email || 'demo@retina.local',
-      signedInAt: new Date().toISOString(),
-    })
+  const signIn = useCallback(async ({ email, password }) => {
+    try {
+      const data = await login(email, password)
+      setSession({
+        authenticated: true,
+        email: data.user.email,
+        token: data.token,
+        signedInAt: new Date().toISOString(),
+      })
+    } catch (error) {
+      throw error
+    }
   }, [])
 
   const signOut = useCallback(() => {

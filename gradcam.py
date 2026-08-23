@@ -32,15 +32,26 @@ class GradCAM:
     def generate(
         self, input_tensor: torch.Tensor, class_idx: Optional[int] = None
     ) -> np.ndarray:
-        self.model.eval()
-        output = self.model(input_tensor)
+        # Grad-CAM needs autograd tracking; if the caller invoked us from
+        # inside a `torch.no_grad()` block (e.g. via @torch.no_grad on the
+        # predict() method), nested calls would otherwise see gradients
+        # disabled. Enable locally so the backward pass can populate the
+        # registered hooks regardless of caller context.
+        with torch.enable_grad():
+            # Ensure the input participates in the autograd graph. The
+            # preprocessing pipeline does not set requires_grad, so we
+            # turn it on here without mutating the caller's tensor.
+            x = input_tensor.detach().clone().requires_grad_(True)
 
-        if class_idx is None:
-            class_idx = output.argmax(dim=1).item()
+            self.model.eval()
+            output = self.model(x)
 
-        self.model.zero_grad()
-        loss = output[0, class_idx]
-        loss.backward()
+            if class_idx is None:
+                class_idx = output.argmax(dim=1).item()
+
+            self.model.zero_grad()
+            loss = output[0, class_idx]
+            loss.backward()
 
         weights = self._gradients.mean(dim=(2, 3), keepdim=True)
         cam = (weights * self._activations).sum(dim=1, keepdim=True)

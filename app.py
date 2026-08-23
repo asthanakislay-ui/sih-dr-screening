@@ -1,5 +1,6 @@
 import time
 import base64
+import logging
 import tempfile
 import os
 from io import BytesIO
@@ -14,7 +15,11 @@ import cv2
 
 from model import DRModel
 from gradcam import GradCAM
+from image_validator import is_likely_fundus_image
 
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("dr_api")
 
 app = FastAPI(title="DR Screening API", version="1.0.0")
 
@@ -28,13 +33,26 @@ app.add_middleware(
 
 WEIGHTS_PATH = "weights/dr_model.pth"
 
+if not os.path.isfile(WEIGHTS_PATH):
+    # Fail fast with a clear, user-readable message rather than letting
+    # the raw torch.load FileNotFoundError surface during startup.
+    raise RuntimeError(
+        f"Model weights not found at '{WEIGHTS_PATH}'. "
+        "Place 'dr_model.pth' inside the 'weights/' directory and restart."
+    )
+
 dr_model = DRModel(weights_path=WEIGHTS_PATH)
 gradcam = GradCAM(dr_model.model, target_layer_name="conv_head")
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "model_loaded": True,
+        "weights": os.path.basename(WEIGHTS_PATH),
+        "device": str(dr_model.device),
+    }
 
 
 @app.post("/predict")
@@ -53,6 +71,31 @@ async def predict(file: UploadFile = File(...)):
             raise HTTPException(
                 status_code=400,
                 detail={"error": "Invalid or corrupted image file"},
+            )
+
+        # Decode the image once as a PIL.Image. We use it for both the
+        # fundus-shape validation (cheap, no GPU) and the model's
+        # preprocess, so we don't have to write a temp file just to read
+        # it back. If decoding fails we treat it as a corrupt upload.
+        try:
+            pil_image = Image.open(BytesIO(contents)).convert("RGB")
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Invalid or corrupted image file"},
+            )
+
+        # Fundus-shape sanity check. Run BEFORE any model inference or
+        # Grad-CAM so we never return a confident-looking heatmap over
+        # a non-retinal photo (a face, an X-ray, a landscape, etc.).
+        is_fundus, reason = is_likely_fundus_image(pil_image)
+        if not is_fundus:
+            # 422 = semantically understood but unprocessable. The
+            # client's frontend treats 422 as a user-facing validation
+            # message and surfaces `reason` directly.
+            raise HTTPException(
+                status_code=422,
+                detail={"error": reason},
             )
 
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
@@ -84,7 +127,7 @@ async def predict(file: UploadFile = File(...)):
 
         heatmap = gradcam.generate(input_tensor, class_idx=class_idx)
 
-        original_img = Image.open(BytesIO(contents)).convert("RGB")
+        original_img = pil_image
         original_array = np.array(original_img)
 
         overlay = gradcam.overlay_on_image(original_array, heatmap, alpha=0.5)
@@ -103,8 +146,15 @@ async def predict(file: UploadFile = File(...)):
             "processing_time_ms": processing_time_ms,
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Model inference error: {str(e)}")
+    except Exception:
+        # Log the full traceback server-side but never echo raw exception
+        # text to the client. Keep the response shape consistent with
+        # the validation 400s above.
+        logger.exception("Inference failed for /predict")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "Model inference failed. Please try again or contact support."},
+        )
 
 
 if __name__ == "__main__":

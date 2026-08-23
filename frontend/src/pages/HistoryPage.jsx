@@ -1,7 +1,9 @@
-import { ArrowUpRight, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ArrowUpRight, Search, Loader2, AlertCircle } from 'lucide-react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { historyStatusOptions, mockHistoryData } from '../data/historyData'
+import { historyStatusOptions } from '../data/historyData'
+import { getScreenings } from '../services/screeningService'
+import { useAuth } from '../context/AuthContext'
 
 const statusStyles = {
   Normal: 'bg-[#edf7f1] text-success',
@@ -11,21 +13,46 @@ const statusStyles = {
 
 function HistoryPage() {
   const navigate = useNavigate()
+  const { session } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [screenings, setScreenings] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function fetchHistory() {
+      setIsLoading(true)
+      setError('')
+      try {
+        const response = await getScreenings(session?.token)
+        setScreenings(response.data || [])
+      } catch (err) {
+        setError(err.message || 'Failed to load screening history.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchHistory()
+  }, [session?.token])
 
   const filteredScreenings = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
 
-    return mockHistoryData.filter((screening) => {
+    return screenings.filter((screening) => {
       const matchesSearch = !normalizedSearch
-        || screening.patientName.toLowerCase().includes(normalizedSearch)
-        || screening.patientId.toLowerCase().includes(normalizedSearch)
-      const matchesStatus = statusFilter === 'All' || screening.drGrade === statusFilter
+        || screening.patient.name.toLowerCase().includes(normalizedSearch)
+        || screening.patient.id.toLowerCase().includes(normalizedSearch)
 
+      // Map DR Grade to a simple status for filtering
+      const grade = screening.screening.drClassName
+      const isReferable = screening.screening.referable
+      const status = isReferable ? 'Refer' : (grade === 'No DR' ? 'Normal' : 'Monitor')
+
+      const matchesStatus = statusFilter === 'All' || status === statusFilter
       return matchesSearch && matchesStatus
     })
-  }, [searchTerm, statusFilter])
+  }, [searchTerm, statusFilter, screenings])
 
   return (
     <div className="mx-auto w-full max-w-[1280px]">
@@ -57,7 +84,16 @@ function HistoryPage() {
       <section className="mt-8" aria-labelledby="previous-screenings-heading">
         <h3 id="previous-screenings-heading" className="mb-4 text-[18px] font-semibold tracking-[-0.015em] text-ink">Previous Screenings</h3>
         <div className="overflow-hidden border border-line bg-panel shadow-[0_1px_3px_rgba(32,42,49,0.04)]">
-          {mockHistoryData.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-14">
+              <Loader2 size={24} className="animate-spin text-accent" />
+            </div>
+          ) : error ? (
+            <div className="px-6 py-14 text-center">
+              <AlertCircle size={32} className="mx-auto text-danger mb-2" />
+              <p className="text-[15px] font-semibold text-ink">{error}</p>
+            </div>
+          ) : screenings.length === 0 ? (
             <HistoryState title="No screening records yet" />
           ) : filteredScreenings.length === 0 ? (
             <HistoryState title="No screenings found" description="Try searching with a different patient name or ID." />
@@ -75,21 +111,36 @@ function HistoryPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {filteredScreenings.map((screening) => (
-                    <tr key={screening.patientId} className="text-[14px] text-ink">
-                      <td className="whitespace-nowrap px-6 py-4 font-medium">{screening.patientName}</td>
-                      <td className="whitespace-nowrap px-6 py-4 text-muted">{screening.patientId}</td>
-                      <td className="whitespace-nowrap px-6 py-4 text-muted">{screening.date}</td>
-                      <td className="whitespace-nowrap px-6 py-4">{screening.drGrade}</td>
-                      <td className="px-6 py-4"><span className={`inline-flex px-2 py-1 text-[12px] font-semibold ${statusStyles[screening.status]}`}>{screening.status}</span></td>
-                      <td className="px-6 py-4 text-right">
-                        <button type="button" onClick={() => navigate('/analysis-result')} className="inline-flex items-center gap-1 text-[13px] font-semibold text-accent hover:text-ink">
-                          View
-                          <ArrowUpRight size={14} strokeWidth={1.8} aria-hidden="true" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredScreenings.map((screening) => {
+                    const grade = screening.screening.drClassName
+                    const isReferable = screening.screening.referable
+                    const status = isReferable ? 'Refer' : (grade === 'No DR' ? 'Normal' : 'Monitor')
+                    const date = new Date(screening.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+
+                    return (
+                      <tr key={screening._id} className="text-[14px] text-ink">
+                        <td className="whitespace-nowrap px-6 py-4 font-medium">{screening.patient.name}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-muted">{screening.patient.id}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-muted">{date}</td>
+                        <td className="whitespace-nowrap px-6 py-4">{grade}</td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2 py-1 text-[12px] font-semibold ${statusStyles[status]}`}>
+                            {status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/analysis-result/${screening._id}`)}
+                            className="inline-flex items-center gap-1 text-[13px] font-semibold text-accent hover:text-ink"
+                          >
+                            View
+                            <ArrowUpRight size={14} strokeWidth={1.8} aria-hidden="true" />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
