@@ -1,10 +1,11 @@
-import { Activity, ClipboardPlus, History, LayoutDashboard } from 'lucide-react'
+import { Activity, BarChart2, ClipboardPlus, History, LayoutDashboard } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const navigationItems = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard, end: true },
   { label: 'New Screening', to: '/new-screening', icon: ClipboardPlus },
   { label: 'History', to: '/history', icon: History },
+  { label: 'Resource Planning', to: '/resource-planning', icon: BarChart2 },
 ]
 
 function Sidebar() {
