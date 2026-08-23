@@ -1,0 +1,65 @@
+[
+  {
+    "scenario": "Baseline_50_per_hr_1_Reviewer",
+    "max_queue": 0.0,
+    "avg_wait_min": 0.0,
+    "max_wait_min": 0.0,
+    "ai_util_pct": 0.9538344143456695,
+    "review_util_pct": 41.66666666666667,
+    "review_bottleneck_pct": 0.0
+  },
+  {
+    "scenario": "Peak_200_per_hr_1_Reviewer",
+    "max_queue": 320.000000000004,
+    "avg_wait_min": 71.2515624999978,
+    "max_wait_min": 160.000000000002,
+    "ai_util_pct": 2.3845860358641735,
+    "review_util_pct": 85.41666666666667,
+    "review_bottleneck_pct": 50.0
+  },
+  {
+    "scenario": "Peak_200_per_hr_2_Reviewers",
+    "max_queue": 0.0,
+    "avg_wait_min": 0.0,
+    "max_wait_min": 0.0,
+    "ai_util_pct": 2.3845860358641735,
+    "review_util_pct": 52.08333333333334,
+    "review_bottleneck_pct": 0.0
+  },
+  {
+    "scenario": "Peak_200_per_hr_3_Reviewers",
+    "max_queue": 0.0,
+    "avg_wait_min": 0.0,
+    "max_wait_min": 0.0,
+    "ai_util_pct": 2.3845860358641735,
+    "review_util_pct": 34.72222222222222,
+    "review_bottleneck_pct": 0.0
+  },
+  {
+    "scenario": "High_Load_100_per_hr_1_Reviewer",
+    "max_queue": 0.0,
+    "avg_wait_min": 0.0,
+    "max_wait_min": 0.0,
+    "ai_util_pct": 1.907668828691339,
+    "review_util_pct": 83.33333333333334,
+    "review_bottleneck_pct": 0.0
+  },
+  {
+    "scenario": "Diurnal_Pattern_2_Reviewers",
+    "max_queue": 0.0,
+    "avg_wait_min": 0.0,
+    "max_wait_min": 0.0,
+    "ai_util_pct": 3.0031921263867845,
+    "review_util_pct": 65.59472136049801,
+    "review_bottleneck_pct": 0.0
+  },
+  {
+    "scenario": "Burst_500_per_hr_1_Reviewer",
+    "max_queue": 379.9999999999957,
+    "avg_wait_min": 71.87586805555208,
+    "max_wait_min": 189.99999999999784,
+    "ai_util_pct": 2.0268981304845477,
+    "review_util_pct": 78.125,
+    "review_bottleneck_pct": 12.5
+  }
+]

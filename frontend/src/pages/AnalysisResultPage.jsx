@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertCircle, CheckCircle2, FileText, Info, Loader2, ArrowLeft } from 'lucide-react'
+import { AlertCircle, FileText, Info, Loader2, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { DR_CLASSES, REFERABLE_THRESHOLD } from '../services/screeningService'
 import { openReportPrintDialog } from '../utils/generateReport'
@@ -7,21 +7,7 @@ import { openReportPrintDialog } from '../utils/generateReport'
 const visualizationTabs = [
   { label: 'Original', key: 'originalImage' },
   { label: 'Grad-CAM', key: 'gradCamImage' },
-  { label: 'Lesion Map', key: 'lesionMapImage', disabled: true },
 ]
-
-const evidenceLabels = {
-  microaneurysms: 'Microaneurysms',
-  hemorrhages: 'Hemorrhages',
-  exudates: 'Exudates',
-  neovascularization: 'Neovascularization',
-}
-
-function evidenceStatus(status) {
-  return status === 'Detected'
-    ? { icon: AlertCircle, className: 'text-danger' }
-    : { icon: CheckCircle2, className: 'text-muted' }
-}
 
 // Map backend class_name to UI-friendly grade and referable status
 function mapDiagnosis(className, confidence) {
@@ -45,30 +31,12 @@ function mapDiagnosis(className, confidence) {
   }
 }
 
-// Generate mock evidence based on class (since backend doesn't return per-lesion detection)
-function generateEvidence(classIdx) {
-  // Higher severity = more lesions detected
-  const baseEvidence = {
-    microaneurysms: 'Not detected',
-    hemorrhages: 'Not detected',
-    exudates: 'Not detected',
-    neovascularization: 'Not detected',
-  }
-
-  if (classIdx >= 1) baseEvidence.microaneurysms = 'Detected'
-  if (classIdx >= 2) baseEvidence.hemorrhages = 'Detected'
-  if (classIdx >= 3) baseEvidence.exudates = 'Detected'
-  if (classIdx >= 4) baseEvidence.neovascularization = 'Detected'
-
-  return baseEvidence
-}
-
 // Generate recommendation based on referable status
 function getRecommendation(referable) {
   if (referable) {
     return {
       title: 'Refer to ophthalmologist',
-      text: 'Referable diabetic retinopathy was detected. Clinical evaluation is recommended.',
+      text: 'Referable diabetic retinopathy was detected. Clinical evaluation by an ophthalmologist is recommended.',
     }
   }
   return {
@@ -107,7 +75,6 @@ function AnalysisResultPage() {
   const explainability = data ? {
     originalImage: data.originalImageBase64 ? `data:image/png;base64,${data.originalImageBase64}` : null,
     gradCamImage: data.result?.heatmap_base64 ? `data:image/png;base64,${data.result.heatmap_base64}` : null,
-    lesionMapImage: null, // No real lesion map endpoint available
   } : {}
 
   async function handleGenerateReport() {
@@ -191,7 +158,6 @@ function AnalysisResultPage() {
 
   const { result, patient, screeningDate } = data
   const diagnosis = mapDiagnosis(result.class_name, result.confidence)
-  const evidence = generateEvidence(diagnosis.classIdx)
   const recommendation = getRecommendation(diagnosis.referable)
 
   return (
@@ -220,7 +186,7 @@ function AnalysisResultPage() {
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[15px] font-semibold text-ink">Fundus Image</h3>
             <span className="text-[12px] text-muted">
-              {activeVisualization === 'originalImage' ? 'Original fundus image' : activeVisualization === 'gradCamImage' ? 'Grad-CAM visualization' : 'Lesion map (coming soon)'}
+              {activeVisualization === 'originalImage' ? 'Original fundus image' : 'Grad-CAM visualization'}
             </span>
           </div>
           <div className="h-[330px] w-full overflow-hidden bg-[#160f18] flex items-center justify-center">
@@ -294,23 +260,6 @@ function AnalysisResultPage() {
             <p className="mt-1 text-[14px] font-semibold text-ink">{result.processing_time_ms} ms</p>
           </div>
           <p className="mt-1.5 text-[12px] leading-4 text-muted">Confidence reflects the model output and should be considered alongside clinical review.</p>
-          <div className="mt-4 border-t border-line pt-3" aria-labelledby="evidence-heading">
-            <h3 id="evidence-heading" className="text-[14px] font-semibold text-ink">Detected Evidence</h3>
-            <div className="mt-1 divide-y divide-line">
-              {Object.entries(evidence).map(([key, status]) => {
-                const { icon: Icon, className } = evidenceStatus(status)
-                return (
-                  <div key={key} className="flex items-center justify-between py-1.5 text-[12px]">
-                    <span className="text-ink">{evidenceLabels[key]}</span>
-                    <span className={`flex items-center gap-1.5 font-medium ${className}`}>
-                      <Icon size={14} strokeWidth={1.8} aria-hidden="true" />
-                      {status}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -336,18 +285,12 @@ function AnalysisResultPage() {
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="border border-line bg-panel p-6 shadow-[0_1px_3px_rgba(32,42,49,0.04)]" aria-labelledby="explainability-heading">
           <h3 id="explainability-heading" className="text-[16px] font-semibold text-ink">Why this result?</h3>
-          <p className="mt-2 text-[13px] leading-5 text-muted">The model's prediction is supported by visual evidence in the image.</p>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="border border-line bg-surface p-3">
-              <p className="text-[13px] font-semibold text-ink">Attention areas</p>
-              <p className="mt-1 text-[12px] text-muted">Grad-CAM visualization</p>
-            </div>
-            <div className="border border-line bg-surface p-3">
-              <p className="text-[13px] font-semibold text-ink">Lesion evidence</p>
-              <p className="mt-1 text-[12px] text-muted">Lesion map visualization</p>
-            </div>
+          <p className="mt-2 text-[13px] leading-5 text-muted">The model's prediction is supported by visual attention analysis.</p>
+          <div className="mt-5 border border-line bg-surface p-3">
+            <p className="text-[13px] font-semibold text-ink">AI Attention (Grad-CAM)</p>
+            <p className="mt-1 text-[12px] text-muted">The highlighted regions indicate areas that contributed most to the model's prediction. This is an explainability visualization, not a lesion detector.</p>
           </div>
-          <p className="mt-4 flex gap-2 text-[12px] leading-5 text-muted"><Info size={15} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />The highlighted regions indicate areas that contributed to the model's prediction.</p>
+          <p className="mt-4 flex gap-2 text-[12px] leading-5 text-muted"><Info size={15} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />Grad-CAM shows where the model focused its attention. It does not detect individual lesions.</p>
         </div>
       </section>
 
