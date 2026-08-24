@@ -5,6 +5,7 @@ import {
   DR_CLASSES,
   REFERABLE_THRESHOLD,
   getScreeningById,
+  UnauthorizedError,
 } from '../services/screeningService'
 import { openReportPrintDialog } from '../utils/generateReport'
 import { useAuth } from '../context/AuthContext'
@@ -62,7 +63,7 @@ function generateEvidence(classIdx) {
 function AnalysisResultPage() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { session } = useAuth()
+  const { session, signOut } = useAuth()
 
   const [activeVisualization, setActiveVisualization] =
     useState('originalImage')
@@ -106,6 +107,11 @@ function AnalysisResultPage() {
           heatmap_base64: screening.images.gradCamPath,
         })
       } catch (err) {
+        if (err instanceof UnauthorizedError) {
+          signOut()
+          navigate('/login', { replace: true })
+          return
+        }
         setError(err.message || 'Failed to load screening results.')
       } finally {
         setIsLoading(false)
@@ -113,7 +119,7 @@ function AnalysisResultPage() {
     }
 
     fetchScreening()
-  }, [id, session?.token])
+  }, [id, session?.token, navigate, signOut])
 
   // Construct image URLs pointing to the backend static uploads folder
   const BACKEND_URL = 'http://localhost:5000'
@@ -225,17 +231,31 @@ function AnalysisResultPage() {
               {error}
             </p>
 
-            <button
-              onClick={handleNewScreening}
-              className="mt-4 inline-flex items-center gap-2 bg-accent px-4 py-2 text-[14px] font-semibold text-white hover:bg-[#126b74]"
-            >
-              <ArrowLeft
-                size={16}
-                strokeWidth={1.8}
-                aria-hidden="true"
-              />
-              New Screening
-            </button>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                onClick={() => navigate('/history')}
+                className="inline-flex items-center gap-2 bg-panel px-4 py-2 text-[14px] font-semibold text-ink border border-line hover:bg-surface"
+              >
+                <ArrowLeft
+                  size={16}
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+                Back to History
+              </button>
+
+              <button
+                onClick={handleNewScreening}
+                className="inline-flex items-center gap-2 bg-accent px-4 py-2 text-[14px] font-semibold text-white hover:bg-[#126b74]"
+              >
+                <ArrowLeft
+                  size={16}
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+                New Screening
+              </button>
+            </div>
           </div>
         </div>
       </div>

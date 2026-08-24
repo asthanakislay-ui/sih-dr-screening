@@ -1,4 +1,4 @@
-import {  Bell, ClipboardPlus, HelpCircle, History, LayoutDashboard, LifeBuoy, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import {  Bell, BarChart2, ClipboardPlus, HelpCircle, History, LayoutDashboard, LifeBuoy, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useSidebar } from '../context/SidebarContext'
 
@@ -6,6 +6,7 @@ const navigationItems = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard, end: true },
   { label: 'New Screening', to: '/new-screening', icon: ClipboardPlus },
   { label: 'History', to: '/history', icon: History },
+  { label: 'Resource Planning', to: '/resource-planning', icon: BarChart2 },
 ]
 
 function Sidebar() {

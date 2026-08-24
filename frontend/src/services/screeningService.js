@@ -3,6 +3,13 @@
 // Thin service layer that talks to both the FastAPI AI service and the Node/Express backend.
 // Errors are surfaced to the caller as plain Error instances with helpful messages.
 
+export class UnauthorizedError extends Error {
+  constructor(message = 'Your session has expired. Please sign in again.') {
+    super(message)
+    this.name = 'UnauthorizedError'
+  }
+}
+
 // Use Vite environment variables with fallbacks for development
 const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'http://localhost:8000'
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000'
@@ -70,11 +77,16 @@ export async function predictScreening(file) {
  * Backend Authentication: Login
  */
 export async function login(email, password) {
-  const response = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  })
+  let response
+  try {
+    response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+  } catch (networkError) {
+    throw new Error(`Could not reach the authentication service. Please check your internet connection. (${networkError.message})`)
+  }
 
   if (!response.ok) {
     const errBody = await response.json()
@@ -88,11 +100,16 @@ export async function login(email, password) {
  * Backend Authentication: Register
  */
 export async function register(name, email, password) {
-  const response = await fetch(`${API_URL}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
-  })
+  let response
+  try {
+    response = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    })
+  } catch (networkError) {
+    throw new Error(`Could not reach the authentication service. Please check your internet connection. (${networkError.message})`)
+  }
 
   if (!response.ok) {
     const errBody = await response.json()
@@ -107,15 +124,23 @@ export async function register(name, email, password) {
  * Expects a FormData object containing the image and JSON fields.
  */
 export async function saveScreening(formData, token) {
-  const response = await fetch(`${API_URL}/screenings`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-    body: formData,
-  })
+  let response
+  try {
+    response = await fetch(`${API_URL}/screenings`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    })
+  } catch (networkError) {
+    throw new Error(`Could not reach the backend service to save the screening. Please check your connection. (${networkError.message})`)
+  }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new UnauthorizedError()
+    }
     const errBody = await response.json()
     throw new Error(errBody.message || 'Failed to save screening')
   }
@@ -127,13 +152,21 @@ export async function saveScreening(formData, token) {
  * Fetch all screenings for the authenticated user.
  */
 export async function getScreenings(token) {
-  const response = await fetch(`${API_URL}/screenings`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  })
+  let response
+  try {
+    response = await fetch(`${API_URL}/screenings`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+  } catch (networkError) {
+    throw new Error(`Could not reach the backend service to fetch screening history. (${networkError.message})`)
+  }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new UnauthorizedError()
+    }
     const errBody = await response.json()
     throw new Error(errBody.message || 'Failed to fetch screenings')
   }
@@ -145,13 +178,21 @@ export async function getScreenings(token) {
  * Fetch a single screening by ID.
  */
 export async function getScreeningById(id, token) {
-  const response = await fetch(`${API_URL}/screenings/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  })
+  let response
+  try {
+    response = await fetch(`${API_URL}/screenings/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+  } catch (networkError) {
+    throw new Error(`Could not reach the backend service to fetch the screening result. (${networkError.message})`)
+  }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new UnauthorizedError()
+    }
     const errBody = await response.json()
     throw new Error(errBody.message || 'Failed to fetch screening details')
   }

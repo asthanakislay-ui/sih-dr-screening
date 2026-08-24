@@ -120,7 +120,7 @@ function Header() {
                 ))}
               </ul>
               <div className="header-popover-meta">
-                <span>Demo notifications</span>
+                <span>Recent updates</span>
                 <span>Mark all as read</span>
               </div>
             </div>

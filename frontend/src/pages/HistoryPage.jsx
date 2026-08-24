@@ -1,8 +1,8 @@
 import { ArrowUpRight, Search, Loader2, AlertCircle } from 'lucide-react'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { historyStatusOptions } from '../data/historyData'
-import { getScreenings } from '../services/screeningService'
+import { getScreenings, UnauthorizedError } from '../services/screeningService'
 import { useAuth } from '../context/AuthContext'
 
 const statusStyles = {
@@ -13,28 +13,34 @@ const statusStyles = {
 
 function HistoryPage() {
   const navigate = useNavigate()
-  const { session } = useAuth()
+  const { session, signOut } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [screenings, setScreenings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    async function fetchHistory() {
-      setIsLoading(true)
-      setError('')
-      try {
-        const response = await getScreenings(session?.token)
-        setScreenings(response.data || [])
-      } catch (err) {
-        setError(err.message || 'Failed to load screening history.')
-      } finally {
-        setIsLoading(false)
+  const fetchHistory = useCallback(async () => {
+    setIsLoading(true)
+    setError('')
+    try {
+      const response = await getScreenings(session?.token)
+      setScreenings(response.data || [])
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        signOut()
+        navigate('/login', { replace: true })
+        return
       }
+      setError(err.message || 'Failed to load screening history.')
+    } finally {
+      setIsLoading(false)
     }
+  }, [session?.token, navigate, signOut])
+
+  useEffect(() => {
     fetchHistory()
-  }, [session?.token])
+  }, [fetchHistory])
 
   const filteredScreenings = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
@@ -92,11 +98,25 @@ function HistoryPage() {
             <div className="px-6 py-14 text-center">
               <AlertCircle size={32} className="mx-auto text-danger mb-2" />
               <p className="text-[15px] font-semibold text-ink">{error}</p>
+              <button
+                type="button"
+                onClick={fetchHistory}
+                className="mt-4 inline-flex items-center gap-2 bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#126b74]"
+              >
+                Retry
+              </button>
             </div>
           ) : screenings.length === 0 ? (
-            <HistoryState title="No screening records yet" />
+            <HistoryState
+              title="No screening records yet"
+              onAction={() => navigate('/new-screening')}
+            />
           ) : filteredScreenings.length === 0 ? (
-            <HistoryState title="No screenings found" description="Try searching with a different patient name or ID." />
+            <HistoryState
+              title="No screenings found"
+              description="Try searching with a different patient name or ID."
+              onAction={() => navigate('/new-screening')}
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] border-collapse text-left">
@@ -151,11 +171,20 @@ function HistoryPage() {
   )
 }
 
-function HistoryState({ title, description }) {
+function HistoryState({ title, description, onAction }) {
   return (
     <div className="px-6 py-14 text-center">
       <p className="text-[15px] font-semibold text-ink">{title}</p>
       {description && <p className="mt-1 text-[13px] text-muted">{description}</p>}
+      {onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-6 inline-flex items-center gap-2 bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#126b74]"
+        >
+          {onAction.label || 'Start New Screening'}
+        </button>
+      )}
     </div>
   )
 }
