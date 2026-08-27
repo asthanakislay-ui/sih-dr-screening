@@ -94,6 +94,7 @@ function AnalysisResultPage() {
             confidence: screening.screening.confidence,
             all_probs: screening.screening.probabilities,
             processing_time_ms: screening.ai.processingTime,
+            modelVersion: screening.ai.modelVersion,
           },
           screeningDate: new Date(screening.createdAt).toLocaleDateString(
             'en-GB',

@@ -1,4 +1,5 @@
-import { AlertTriangle, Info } from 'lucide-react'
+import { AlertTriangle, Info, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 const scenarioData = [
   {
@@ -75,6 +76,24 @@ const simulationCharts = [
 ]
 
 function ResourcePlanningPage() {
+  const [selectedChart, setSelectedChart] = useState(null)
+
+  useEffect(() => {
+    if (!selectedChart) return
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedChart(null)
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [selectedChart])
+
   return (
     <div className="mx-auto w-full max-w-[1280px]">
       <header className="flex items-start justify-between gap-4">
@@ -182,7 +201,8 @@ function ResourcePlanningPage() {
           {simulationCharts.map((chart, index) => (
             <article
               key={index}
-              className="border border-line bg-panel rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(32,42,49,0.04)]"
+              onClick={() => setSelectedChart(chart)}
+              className="border border-line bg-panel rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(32,42,49,0.04)] cursor-pointer transition-colors hover:border-accent"
             >
               <div className="relative aspect-video bg-surface">
                 <img
@@ -200,6 +220,41 @@ function ResourcePlanningPage() {
           ))}
         </div>
       </section>
+
+      {selectedChart && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm transition-opacity duration-300 ease-in-out animate-in fade-in"
+          onClick={() => setSelectedChart(null)}
+        >
+          <div
+            className="relative max-w-5xl w-full bg-panel rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ease-out animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              onClick={() => setSelectedChart(null)}
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="p-2 bg-surface">
+              <img
+                src={`/assets/${selectedChart.filename}`}
+                alt={selectedChart.title}
+                className="w-full h-auto max-h-[80vh] object-contain block mx-auto"
+              />
+            </div>
+
+            <div className="p-6">
+              <h3 className="text-[20px] font-semibold text-ink">{selectedChart.title}</h3>
+              <p className="mt-2 text-[15px] text-muted leading-relaxed">
+                {selectedChart.caption}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

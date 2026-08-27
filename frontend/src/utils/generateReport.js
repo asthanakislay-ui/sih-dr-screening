@@ -81,6 +81,7 @@ function buildReportHtml({ data, diagnosis, evidence, recommendation }) {
         <span class="report-pill ${diagnosis.referable ? 'report-pill--refer' : 'report-pill--normal'}">${escapeHtml(diagnosis.label)}</span>
         <dl class="report-grid report-grid--two">
           <div><dt>Model confidence</dt><dd>${escapeHtml(diagnosis.confidence)}</dd></div>
+          <div><dt>Model version</dt><dd>${escapeHtml(result?.modelVersion || 'v1.0')}</dd></div>
           <div><dt>Inference time</dt><dd>${escapeHtml(formatMs(result?.processing_time_ms))}</dd></div>
         </dl>
       </div>`
@@ -121,12 +122,14 @@ function buildReportHtml({ data, diagnosis, evidence, recommendation }) {
       </ul>`
     : ''
 
-  const originalImg = originalImageBase64
-    ? `data:image/png;base64,${originalImageBase64}`
-    : null
-  const heatmapImg = result?.heatmap_base64
-    ? `data:image/png;base64,${result.heatmap_base64}`
-    : null
+  const BACKEND_URL = 'http://localhost:5000'
+  const getImageUrl = (path) => {
+    if (!path) return null
+    return `${BACKEND_URL}/uploads/${path.replace('uploads\\', '').replace('uploads/', '')}`
+  }
+
+  const originalImg = getImageUrl(originalImageBase64)
+  const heatmapImg = getImageUrl(data.heatmap_base64)
 
   const imagesBlock = `
     <div class="report-images">
