@@ -1,18 +1,18 @@
 export const dashboardMetrics = [
   {
-    label: 'Total Screenings',
+    label: 'dashboard.metrics.totalScreenings',
     value: '128',
-    supportingText: 'This month',
+    supportingText: 'dashboard.metrics.thisMonth',
   },
   {
-    label: 'Referable Cases',
+    label: 'dashboard.metrics.referableCases',
     value: '18',
-    supportingText: 'Require ophthalmologist review',
+    supportingText: 'dashboard.metrics.requireReview',
   },
   {
-    label: 'Pending Reviews',
+    label: 'dashboard.metrics.pendingReviews',
     value: '4',
-    supportingText: 'Awaiting clinical review',
+    supportingText: 'dashboard.metrics.awaitingReview',
   },
 ]
 

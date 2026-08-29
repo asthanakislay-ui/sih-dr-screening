@@ -1,42 +1,44 @@
-import { Bell, CircleUserRound, LogOut, Moon, Search, Settings, Sun, User } from 'lucide-react'
+import { Bell, CircleUserRound, LogOut, Moon, Search, Settings, Sun, User, Languages } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useTranslation } from '../context/LanguageContext'
 
 const demoNotifications = [
   {
     id: 'n-1',
-    title: 'New screening completed',
-    description: 'Patient P-1024 · Moderate NPDR flagged for review.',
-    time: 'Just now',
+    title: 'header.notifications.n1_title',
+    description: 'header.notifications.n1_desc',
+    time: 'header.notifications.time_now',
   },
   {
     id: 'n-2',
-    title: 'Pending review queue',
-    description: '3 screenings are awaiting clinician sign-off.',
-    time: '15 min ago',
+    title: 'header.notifications.n2_title',
+    description: 'header.notifications.n2_desc',
+    time: 'header.notifications.time_15m',
   },
   {
     id: 'n-3',
-    title: 'Weekly summary ready',
-    description: '12 referrals detected across this week’s batch.',
-    time: '2 hours ago',
+    title: 'header.notifications.n3_title',
+    description: 'header.notifications.n3_desc',
+    time: 'header.notifications.time_2h',
   },
   {
     id: 'n-4',
-    title: 'Model update available',
-    description: 'DR grading model v2.4 is ready to install.',
-    time: 'Yesterday',
+    title: 'header.notifications.n4_title',
+    description: 'header.notifications.n4_desc',
+    time: 'header.notifications.time_yesterday',
   },
 ]
 
 function Header() {
   const { theme, toggleTheme } = useTheme()
-  const { signOut, session } = useAuth()
+  const { signOut, session, activeRole, setRole } = useAuth()
+  const { language, setLanguage, t } = useTranslation()
   const navigate = useNavigate()
 
-  const [openPanel, setOpenPanel] = useState(null) // 'notifications' | 'profile' | null
+  const [openPanel, setOpenPanel] = useState(null) // 'notifications' | 'profile' | 'language' | null
   const headerRef = useRef(null)
 
   // Close any open popover on outside click or Escape.
@@ -81,7 +83,7 @@ function Header() {
         <Search size={16} strokeWidth={1.8} className="text-[#7C8B96]" aria-hidden="true" />
         <input
           type="search"
-          placeholder="Search patients, screenings, records..."
+          placeholder={t('header.searchPlaceholder')}
           aria-label="Search"
           className="retina-search-input w-full bg-transparent text-[13px] tracking-[0.005em] text-ink placeholder:text-[#9AA8B2] focus:outline-none"
         />
@@ -107,21 +109,21 @@ function Header() {
           {openPanel === 'notifications' && (
             <div className="header-popover header-popover--wide" role="dialog" aria-label="Notifications">
               <div className="header-popover-header">
-                <h3 className="header-popover-title">Notifications</h3>
-                <span className="header-popover-time">{demoNotifications.length} new</span>
+                <h3 className="header-popover-title">{t('header.notificationsTitle')}</h3>
+                <span className="header-popover-time">{t('header.notificationsNew', { count: demoNotifications.length })}</span>
               </div>
               <ul className="header-popover-list">
                 {demoNotifications.map((notification) => (
                   <li key={notification.id} className="header-popover-notification">
-                    <p className="header-popover-notification-title">{notification.title}</p>
-                    <p className="header-popover-notification-desc">{notification.description}</p>
-                    <span className="header-popover-time">{notification.time}</span>
+                    <p className="header-popover-notification-title">{t(notification.title)}</p>
+                    <p className="header-popover-notification-desc">{t(notification.description)}</p>
+                    <span className="header-popover-time">{t(notification.time)}</span>
                   </li>
                 ))}
               </ul>
               <div className="header-popover-meta">
-                <span>Recent updates</span>
-                <span>Mark all as read</span>
+                <span>{t('header.recentUpdates')}</span>
+                <span>{t('header.markAllRead')}</span>
               </div>
             </div>
           )}
@@ -136,6 +138,48 @@ function Header() {
         >
           {isDark ? <Sun size={17} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={17} strokeWidth={1.8} aria-hidden="true" />}
         </button>
+
+        <div className="header-popover-anchor">
+          <button
+            type="button"
+            aria-label="Change language"
+            aria-haspopup="true"
+            aria-expanded={openPanel === 'language'}
+            onClick={() => toggle('language')}
+            className="retina-icon-btn flex size-10 items-center justify-center rounded-full"
+          >
+            <Languages size={17} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+          {openPanel === 'language' && (
+            <div className="header-popover" role="menu" aria-label="Language selector">
+              <div className="header-popover-header">
+                <h3 className="header-popover-title">Language</h3>
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                className={`header-popover-item ${language === 'en' ? 'is-active' : ''}`}
+                onClick={() => {
+                  setLanguage('en')
+                  setOpenPanel(null)
+                }}
+              >
+                <span className="font-medium">English (EN)</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={`header-popover-item ${language === 'hi' ? 'is-active' : ''}`}
+                onClick={() => {
+                  setLanguage('hi')
+                  setOpenPanel(null)
+                }}
+              >
+                <span className="font-medium">हिन्दी (HI)</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="mx-1 h-6 w-px bg-line" aria-hidden="true" />
 
@@ -168,17 +212,22 @@ function Header() {
                   </p>
                 </div>
                 <span className="dashboard-meta-pill" style={{ padding: '3px 8px', fontSize: 10.5 }}>
-                  Clinician
+                  {t('header.roles.' + (activeRole || 'clinician'))}
                 </span>
               </div>
               <button
                 type="button"
                 role="menuitem"
                 className="header-popover-item"
-                onClick={() => setOpenPanel(null)}
+                onClick={() => {
+                  setRole(activeRole === 'clinician' ? 'technician' : 'clinician')
+                  setOpenPanel(null)
+                }}
               >
-                <User size={15} strokeWidth={1.8} aria-hidden="true" />
-                <span>Profile</span>
+                <Settings size={15} strokeWidth={1.8} aria-hidden="true" />
+                <span style={{ fontSize: '12px' }}>
+                  {t('header.switchView', { role: t('header.roles.' + (activeRole === 'clinician' ? 'technician' : 'clinician')) })}
+                </span>
               </button>
               <button
                 type="button"
@@ -186,8 +235,8 @@ function Header() {
                 className="header-popover-item"
                 onClick={() => setOpenPanel(null)}
               >
-                <Settings size={15} strokeWidth={1.8} aria-hidden="true" />
-                <span>Settings</span>
+                <User size={15} strokeWidth={1.8} aria-hidden="true" />
+                <span>{t('header.profile')}</span>
               </button>
               <div className="header-popover-divider" aria-hidden="true" />
               <button
@@ -197,7 +246,7 @@ function Header() {
                 onClick={handleSignOut}
               >
                 <LogOut size={15} strokeWidth={1.8} aria-hidden="true" />
-                <span>Sign out</span>
+                <span>{t('header.signOut')}</span>
               </button>
             </div>
           )}

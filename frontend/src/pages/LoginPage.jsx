@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from '../context/LanguageContext'
 import fundusOriginal from '../assets/fundus-bg.png'
 import fundusGradcam from '../assets/mock-fundus-gradcam.svg'
 import { useAuth } from '../context/AuthContext'
@@ -14,9 +15,11 @@ function isValidEmailLike(value) {
 function LoginPage() {
   const navigate = useNavigate()
   const { signIn } = useAuth()
+  const { t } = useTranslation()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [selectedRole, setSelectedRole] = useState('clinician')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -55,6 +58,7 @@ function LoginPage() {
       await signIn({
         email: email.trim(),
         password,
+        role: selectedRole,
       })
 
       navigate('/', { replace: true })
@@ -250,7 +254,7 @@ function LoginPage() {
             aria-hidden="true"
           />
           <span className="login-topbar-text">
-            Clinical Access
+            {t('auth.access.' + (selectedRole === 'clinician' ? 'clinician' : 'technician'))}
           </span>
         </div>
       </header>
@@ -263,14 +267,11 @@ function LoginPage() {
         >
           <h1 className="login-headline">
             <span className="login-headline-white">
-              See deeper.
-            </span>
-            <span className="login-headline-teal">
-              Screen earlier.
+              {t('auth.heroHeadline')}
             </span>
           </h1>
 
-          {/* Model Attention preview */}
+          {/* {t('auth.attentionLabel')} preview */}
           <aside
             className="login-attention"
             aria-label="Model attention preview"
@@ -293,15 +294,15 @@ function LoginPage() {
                   className="login-attention-dot"
                   aria-hidden="true"
                 />
-                Model Attention
+                {t('auth.attentionLabel')}
               </p>
 
               <p className="login-attention-title">
-                Grad-CAM visualization
+                {t('auth.attentionTitle')}
               </p>
 
               <p className="login-attention-desc">
-                for model interpretation.
+                {t('auth.attentionDesc')}
               </p>
             </div>
 
@@ -334,16 +335,16 @@ function LoginPage() {
               />
 
               <span className="login-form-meta-label">
-                Secure Sign In
+                {t('auth.secureSignIn')}
               </span>
             </div>
 
             <h2 className="login-form-title">
-              Welcome back, doctor.
+              {t('auth.welcome', { role: t('auth.welcomeRoles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')) })}
             </h2>
 
             <p className="login-form-sub">
-              Sign in to continue a screening session.
+              {t('auth.signInSub')}
             </p>
 
             {errors.api && (
@@ -360,12 +361,38 @@ function LoginPage() {
               onSubmit={handleSubmit}
               noValidate
             >
+              {/* Role Selector Toggle */}
+              <div className="login-role-selector mb-6 flex justify-center gap-2 p-1 rounded-lg bg-black/20 w-fit mx-auto">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('clinician')}
+                  className={`px-4 py-1.5 text-[12px] font-semibold rounded-md transition-all ${
+                    selectedRole === 'clinician'
+                      ? 'bg-[#12C7C8] text-white shadow-sm'
+                      : 'text-muted hover:text-white'
+                  }`}
+                >
+                  Clinician
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('technician')}
+                  className={`px-4 py-1.5 text-[12px] font-semibold rounded-md transition-all ${
+                    selectedRole === 'technician'
+                      ? 'bg-[#12C7C8] text-white shadow-sm'
+                      : 'text-muted hover:text-white'
+                  }`}
+                >
+                  Technician
+                </button>
+              </div>
+
               <div className="login-field">
                 <label
                   htmlFor="login-email"
                   className="login-label"
                 >
-                  Email or Clinician ID
+                  {t('auth.labels.email', { role: t('auth.roles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')) })}
                 </label>
 
                 <div className="login-input-row">
@@ -415,7 +442,7 @@ function LoginPage() {
                   htmlFor="login-password"
                   className="login-label"
                 >
-                  <span>Password</span>
+                  <span>{t('auth.labels.password')}</span>
 
                   <a
                     href="#"
@@ -425,7 +452,7 @@ function LoginPage() {
                       event.preventDefault()
                     }
                   >
-                    Forgot?
+                    {t('auth.labels.forgot')}
                   </a>
                 </label>
 
@@ -505,7 +532,7 @@ function LoginPage() {
               <label className="login-check">
                 <input type="checkbox" />
                 <span>
-                  Keep me signed in on this device
+                  {t('auth.labels.keepSignedIn')}
                 </span>
               </label>
 
@@ -516,8 +543,8 @@ function LoginPage() {
               >
                 <span>
                   {isSubmitting
-                    ? 'Opening workspace…'
-                    : 'Sign in to RETINA'}
+                    ? t('auth.buttons.signInLoading')
+                    : t('auth.buttons.signIn')}
                 </span>
 
                 <ArrowRight
@@ -530,7 +557,7 @@ function LoginPage() {
 
             <div className="login-form-foot">
               <span>
-                New to the programme?
+                {t('auth.footer.newToProgramme')}
               </span>
 
               <a
@@ -540,14 +567,13 @@ function LoginPage() {
                   event.preventDefault()
                 }
               >
-                Request clinician access
+                {t('auth.buttons.requestAccess', { role: t('auth.roles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')) })}
               </a>
             </div>
           </div>
 
           <p className="login-fineprint">
-            For research demonstration only · Not a
-            certified medical device
+            {t('auth.footer.demo')}
           </p>
         </section>
       </main>
@@ -557,17 +583,18 @@ function LoginPage() {
         className="login-footbar"
         aria-label="Page footer"
       >
-        <span>© 2026 RETINA Consortium</span>
+        <span>{t('auth.footer.copyright')}</span>
 
         <span
           className="login-footbar-sep"
           aria-hidden="true"
         />
 
-        <span>Built in India</span>
+        <span>{t('auth.footer.builtInIndia')}</span>
       </footer>
     </div>
   )
 }
 
 export default LoginPage
+                

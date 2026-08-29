@@ -78,9 +78,12 @@ const createScreening = async (req, res, next) => {
  */
 const getAllScreenings = async (req, res, next) => {
   try {
-    // For demo purposes, we return all screenings.
-    // In production, we might filter by req.userId.
-    const screenings = await Screening.find().sort({ createdAt: -1 });
+    const filter = {};
+    if (req.userRole !== 'admin') {
+      filter.createdBy = req.userId;
+    }
+
+    const screenings = await Screening.find(filter).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -104,6 +107,14 @@ const getScreeningById = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Screening record not found.',
+      });
+    }
+
+    // Access Control: Only admins or the creator can view the screening
+    if (req.userRole !== 'admin' && screening.createdBy.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You are not authorized to view this screening.',
       });
     }
 

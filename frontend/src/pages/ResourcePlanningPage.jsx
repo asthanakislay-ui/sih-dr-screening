@@ -1,5 +1,6 @@
 import { AlertTriangle, Info, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useTranslation } from '../context/LanguageContext'
 
 const scenarioData = [
   {
@@ -76,6 +77,7 @@ const simulationCharts = [
 ]
 
 function ResourcePlanningPage() {
+  const { t } = useTranslation()
   const [selectedChart, setSelectedChart] = useState(null)
 
   useEffect(() => {
@@ -98,14 +100,14 @@ function ResourcePlanningPage() {
     <div className="mx-auto w-full max-w-[1280px]">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-[26px] font-semibold tracking-[-0.025em] text-ink">Resource Planning</h2>
+          <h2 className="text-[26px] font-semibold tracking-[-0.025em] text-ink">{t('resource.title')}</h2>
           <p className="mt-1 text-[14px] text-muted">
-            Capacity planning analysis based on Simulink queueing simulations for DR screening.
+            {t('resource.subtitle')}
           </p>
         </div>
         <span className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-warning bg-[#fff8e8] rounded-full">
           <Info size={12} strokeWidth={2} aria-hidden="true" />
-          Precomputed Simulation Results
+          {t('resource.simulationResults')}
         </span>
       </header>
 
@@ -121,7 +123,7 @@ function ResourcePlanningPage() {
             </div>
             <div className="flex-1">
               <h3 className="text-[16px] font-semibold text-ink">
-                Key Finding: AI processing throughput (3,600 images/hour) is significantly faster than human review capacity — human ophthalmologist review is the system bottleneck, not AI inference.
+                {t('resource.keyFinding')}
               </h3>
             </div>
           </div>
@@ -130,9 +132,9 @@ function ResourcePlanningPage() {
 
       {/* Comparison Table */}
       <section className="mt-10">
-        <h3 className="text-[18px] font-semibold tracking-[-0.015em] text-ink">Scenario Comparison</h3>
+        <h3 className="text-[18px] font-semibold tracking-[-0.015em] text-ink">{t('resource.comparisonTitle')}</h3>
         <p className="mt-1 text-[14px] text-muted">
-          Impact of reviewer staffing on system performance under various arrival rates.
+          {t('resource.comparisonSub')}
         </p>
 
         <div className="mt-4 overflow-hidden border border-line bg-panel shadow-[0_1px_3px_rgba(32,42,49,0.04)] rounded-lg">
@@ -140,12 +142,12 @@ function ResourcePlanningPage() {
             <table className="w-full min-w-[720px] border-collapse text-left">
               <thead className="border-b border-line bg-surface">
                 <tr className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted">
-                  <th className="px-6 py-3.5">Scenario</th>
-                  <th className="px-6 py-3.5 text-center">Reviewers</th>
-                  <th className="px-6 py-3.5 text-center">Peak Arrival Rate</th>
-                  <th className="px-6 py-3.5 text-center">Max Queue Length</th>
-                  <th className="px-6 py-3.5 text-center">Max Wait Time</th>
-                  <th className="px-6 py-3.5 text-center">Review Utilization %</th>
+                  <th className="px-6 py-3.5">{t('resource.tableHeaders.scenario')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.reviewers')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.arrivalRate')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.queueLength')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.waitTime')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.utilization')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -184,7 +186,7 @@ function ResourcePlanningPage() {
           </div>
           <div className="pt-0.5">
             <p className="text-[14px] font-medium text-ink">
-              30-minute wait time SLA (per PS 26038 human-in-the-loop requirement) is violated only in the single-reviewer peak scenario — demonstrating the need for adequate reviewer staffing at scale.
+              {t('resource.slaNote')}
             </p>
           </div>
         </div>
@@ -192,9 +194,9 @@ function ResourcePlanningPage() {
 
       {/* Chart Gallery */}
       <section className="mt-10">
-        <h3 className="text-[18px] font-semibold tracking-[-0.015em] text-ink">Simulation Visualizations</h3>
+        <h3 className="text-[18px] font-semibold tracking-[-0.015em] text-ink">{t('resource.vizTitle')}</h3>
         <p className="mt-1 text-[14px] text-muted">
-          Precomputed Simulink charts showing queue length and wait time trends.
+          {t('resource.vizSub')}
         </p>
 
         <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -233,7 +235,7 @@ function ResourcePlanningPage() {
             <button
               className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
               onClick={() => setSelectedChart(null)}
-              aria-label="Close modal"
+              aria-label={t('resource.closeModal')}
             >
               <X size={20} />
             </button>

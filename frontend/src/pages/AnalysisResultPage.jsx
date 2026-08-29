@@ -9,6 +9,7 @@ import {
 } from '../services/screeningService'
 import { openReportPrintDialog } from '../utils/generateReport'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from '../context/LanguageContext'
 
 const visualizationTabs = [
   { label: 'Original', key: 'originalImage' },
@@ -16,21 +17,21 @@ const visualizationTabs = [
 ]
 
 // Map backend class_name to UI-friendly grade and referable status
-function mapDiagnosis(className, confidence) {
+function mapDiagnosis(className, confidence, t) {
   const classIdx = DR_CLASSES.indexOf(className)
   const isReferable = classIdx >= REFERABLE_THRESHOLD
 
   const gradeMap = {
-    'No DR': 'No DR',
-    Mild: 'Mild NPDR',
-    Moderate: 'Moderate NPDR',
-    Severe: 'Severe NPDR',
-    Proliferative: 'Proliferative DR',
+    'No DR': t('analysis.grades.noDr'),
+    Mild: t('analysis.grades.mild'),
+    Moderate: t('analysis.grades.moderate'),
+    Severe: t('analysis.grades.severe'),
+    Proliferative: t('analysis.grades.proliferative'),
   }
 
   return {
     grade: gradeMap[className] || className,
-    label: isReferable ? 'Referable DR' : 'Non-referable DR',
+    label: isReferable ? t('analysis.labels.referable') : t('analysis.labels.nonReferable'),
     referable: isReferable,
     confidence: `${Math.round(confidence * 100)}%`,
     classIdx,
@@ -38,17 +39,17 @@ function mapDiagnosis(className, confidence) {
 }
 
 // Generate recommendation based on referable status
-function getRecommendation(referable) {
+function getRecommendation(referable, t) {
   if (referable) {
     return {
-      title: 'Refer to ophthalmologist',
-      text: 'Referable diabetic retinopathy was detected. Clinical evaluation by an ophthalmologist is recommended.',
+      title: t('analysis.recommendation.referTitle'),
+      text: t('analysis.recommendation.referText'),
     }
   }
 
   return {
-    title: 'Routine follow-up',
-    text: 'No referable diabetic retinopathy detected. Continue routine screening per clinical guidelines.',
+    title: t('analysis.recommendation.routineTitle'),
+    text: t('analysis.recommendation.routineText'),
   }
 }
 
@@ -64,6 +65,8 @@ function AnalysisResultPage() {
   const navigate = useNavigate()
   const { id } = useParams()
   const { session, signOut } = useAuth()
+  const { t, language } = useTranslation()
+  const isTechnician = session?.role === 'technician'
 
   const [activeVisualization, setActiveVisualization] =
     useState('originalImage')
@@ -77,7 +80,7 @@ function AnalysisResultPage() {
   useEffect(() => {
     async function fetchScreening() {
       if (!id) {
-        setError('No screening ID provided.')
+        setError(t('analysis.errors.noId'))
         setIsLoading(false)
         return
       }
@@ -97,7 +100,7 @@ function AnalysisResultPage() {
             modelVersion: screening.ai.modelVersion,
           },
           screeningDate: new Date(screening.createdAt).toLocaleDateString(
-            'en-GB',
+            language === 'hi' ? 'hi-IN' : 'en-GB',
             {
               day: '2-digit',
               month: 'short',
@@ -113,7 +116,7 @@ function AnalysisResultPage() {
           navigate('/login', { replace: true })
           return
         }
-        setError(err.message || 'Failed to load screening results.')
+        setError(err.message || t('analysis.errors.generic'))
       } finally {
         setIsLoading(false)
       }
@@ -182,15 +185,15 @@ function AnalysisResultPage() {
       })
 
       setReportMessage(
-        'Report ready — use your browser’s “Save as PDF” option to download.',
+        t('analysis.reportReady'),
       )
     } catch (err) {
       setIsReportError(true)
 
       setReportMessage(
         err && err.message
-          ? `Could not generate report: ${err.message}`
-          : 'Could not generate report. Please try again.',
+          ? t('analysis.reportError', { error: err.message })
+          : t('analysis.reportGenericError'),
       )
     } finally {
       setIsGeneratingReport(false)
@@ -242,7 +245,7 @@ function AnalysisResultPage() {
                   strokeWidth={1.8}
                   aria-hidden="true"
                 />
-                Back to History
+                {t('common.backToHistory')}
               </button>
 
               <button
@@ -254,7 +257,7 @@ function AnalysisResultPage() {
                   strokeWidth={1.8}
                   aria-hidden="true"
                 />
-                New Screening
+                {t('common.newScreening')}
               </button>
             </div>
           </div>
@@ -284,16 +287,16 @@ function AnalysisResultPage() {
       <div className="ar-section--head flex items-center justify-between gap-4">
         <div>
           <h2 className="text-[24px] font-semibold tracking-[-0.025em] text-ink">
-            Analysis Result
+            {t('analysis.title')}
           </h2>
 
           <p className="mt-0.5 text-[13px] text-muted">
-            AI-assisted diabetic retinopathy screening result
+            {t('analysis.subtitle')}
           </p>
         </div>
 
         <span className="shrink-0 text-[13px] font-medium text-muted">
-          Case #{patient.id}
+          {t('analysis.case')}#{patient.id}
         </span>
       </div>
 
@@ -306,32 +309,32 @@ function AnalysisResultPage() {
           id="patient-summary-heading"
           className="sr-only"
         >
-          Patient Information
+          {t('analysis.patientInfo')}
         </h3>
 
         <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <PatientDetail
-            label="Patient ID"
+            label={t('analysis.labels.patientId')}
             value={patient.id}
           />
 
           <PatientDetail
-            label="Patient Name"
+            label={t('analysis.labels.patientName')}
             value={patient.name}
           />
 
           <PatientDetail
-            label="Age"
+            label={t('analysis.labels.age')}
             value={patient.age}
           />
 
           <PatientDetail
-            label="Gender"
+            label={t('analysis.labels.gender')}
             value={patient.gender}
           />
 
           <PatientDetail
-            label="Screening Date"
+            label={t('analysis.labels.date')}
             value={screeningDate}
           />
         </dl>
@@ -342,17 +345,42 @@ function AnalysisResultPage() {
         className="ar-section--viz grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.8fr)]"
         aria-label="Analysis result"
       >
+        {isTechnician && (
+          <div
+            className={`col-span-full border-l-4 p-4 shadow-sm ${
+              diagnosis.referable
+                ? 'bg-danger-soft border-danger'
+                : 'bg-success-soft border-success'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <AlertCircle
+                size={24}
+                className={diagnosis.referable ? 'text-danger' : 'text-success'}
+              />
+              <div>
+                <h3 className={`text-lg font-bold ${diagnosis.referable ? 'text-danger' : 'text-success'}`}>
+                  {diagnosis.referable ? t('analysis.drDetected') : t('analysis.noReferable')}
+                </h3>
+                <p className="text-ink font-medium">
+                  {diagnosis.referable ? t('analysis.referOpthal') : t('analysis.routineFollow')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Image viewer */}
         <div className="border border-line bg-panel p-4 shadow-[0_1px_3px_rgba(32,42,49,0.04)]">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[15px] font-semibold text-ink">
-              Fundus Image
+              {t('analysis.fundusImage')}
             </h3>
 
             <span className="text-[12px] text-muted">
               {activeVisualization === 'originalImage'
-                ? 'Original fundus image'
-                : 'Grad-CAM visualization'}
+                ? t('analysis.originalImage')
+                : t('analysis.gradCam')}
             </span>
           </div>
 
@@ -382,6 +410,10 @@ function AnalysisResultPage() {
               const isActive =
                 activeVisualization === tab.key
               const hasImage = explainability[tab.key]
+
+              if (isTechnician && tab.key === 'gradCamImage') return null
+
+             
 
               if (isDisabled) {
                 return (
@@ -432,7 +464,7 @@ function AnalysisResultPage() {
         {/* Classification */}
         <div className="border border-line bg-panel p-5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]">
           <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-muted">
-            Classification
+            {t('analysis.classification')}
           </p>
 
           <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.025em] text-ink">
@@ -445,7 +477,7 @@ function AnalysisResultPage() {
 
           <div className="mt-5 border-t border-line pt-4">
             <p className="text-[12px] font-medium text-muted">
-              Model confidence
+              {t('analysis.confidence')}
             </p>
 
             <p className="mt-1 text-[21px] font-semibold text-ink">
@@ -454,104 +486,106 @@ function AnalysisResultPage() {
           </div>
 
           <div className="mt-4 border-t border-line pt-4">
-            <p className="text-[12px] font-medium text-muted">
-              Inference time
-            </p>
+            {!isTechnician && (
+              <>
+                <p className="text-[12px] font-medium text-muted">
+                  {t('analysis.inferenceTime')}
+                </p>
 
-            <p className="mt-1 text-[14px] font-semibold text-ink">
-              {result.processing_time_ms} ms
-            </p>
+                <p className="mt-1 text-[14px] font-semibold text-ink">
+                  {result.processing_time_ms} ms
+                </p>
+              </>
+            )}
           </div>
 
           <p className="mt-1.5 text-[12px] leading-4 text-muted">
-            Confidence reflects the model output and should be
-            considered alongside clinical review.
+            {t('analysis.confidenceDisclaimer')}
           </p>
         </div>
       </section>
 
       {/* Probability breakdown */}
-      <section
-        className="ar-section--probs border border-line bg-panel p-5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]"
-        aria-labelledby="probabilities-heading"
-      >
-        <h3
-          id="probabilities-heading"
-          className="text-[14px] font-semibold text-ink"
-        >
-          Class Probabilities
-        </h3>
-
-        <div className="mt-4 space-y-3">
-          {result.all_probs.map((prob, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-3"
-            >
-              <span className="w-[120px] text-[13px] font-medium text-ink">
-                {DR_CLASSES[idx]}
-              </span>
-
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface">
-                <div
-                  className="ar-prob-fill h-full bg-accent transition-all duration-300"
-                  style={{
-                    width: `${prob * 100}%`,
-                  }}
-                />
-              </div>
-
-              <span className="w-[50px] text-right font-mono text-[13px] text-ink">
-                {Math.round(prob * 100)}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Explainability */}
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div
-          className="border border-line bg-panel p-6 shadow-[0_1px_3px_rgba(32,42,49,0.04)]"
-          aria-labelledby="explainability-heading"
+      {!isTechnician && (
+        <section
+          className="ar-section--probs border border-line bg-panel p-5 shadow-[0_1px_3px_rgba(32,42,49,0.04)]"
+          aria-labelledby="probabilities-heading"
         >
           <h3
-            id="explainability-heading"
-            className="text-[16px] font-semibold text-ink"
+            id="probabilities-heading"
+            className="text-[14px] font-semibold text-ink"
           >
-            Why this result?
+            {t('analysis.probabilities')}
           </h3>
 
-          <p className="mt-2 text-[13px] leading-5 text-muted">
-            The model's prediction is supported by visual
-            attention analysis.
-          </p>
+          <div className="mt-4 space-y-3">
+            {result.all_probs.map((prob, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-3"
+              >
+                <span className="w-[120px] text-[13px] font-medium text-ink">
+                  {t('history.grades.' + DR_CLASSES[idx])}
+                </span>
 
-          <div className="mt-5 border border-line bg-surface p-3">
-            <p className="text-[13px] font-semibold text-ink">
-              AI Attention (Grad-CAM)
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface">
+                  <div
+                    className="ar-prob-fill h-full bg-accent transition-all duration-300"
+                    style={{
+                      width: `${prob * 100}%`,
+                    }}
+                  />
+                </div>
+
+                <span className="w-[50px] text-right font-mono text-[13px] text-ink">
+                  {Math.round(prob * 100)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Explainability */}
+      {!isTechnician && (
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div
+            className="border border-line bg-panel p-6 shadow-[0_1px_3px_rgba(32,42,49,0.04)]"
+            aria-labelledby="explainability-heading"
+          >
+            <h3
+              id="explainability-heading"
+              className="text-[16px] font-semibold text-ink"
+            >
+              {t('analysis.whyThisResult')}
+            </h3>
+
+            <p className="mt-2 text-[13px] leading-5 text-muted">
+              {t('analysis.explainabilityText')}
             </p>
 
-            <p className="mt-1 text-[12px] text-muted">
-              The highlighted regions indicate areas that
-              contributed most to the model's prediction. This is
-              an explainability visualization, not a lesion
-              detector.
+            <div className="mt-5 border border-line bg-surface p-3">
+              <p className="text-[13px] font-semibold text-ink">
+                {t('analysis.attentionBoxTitle')}
+              </p>
+
+              <p className="mt-1 text-[12px] text-muted">
+                {t('analysis.attentionBoxText')}
+              </p>
+            </div>
+
+            <p className="mt-4 flex gap-2 text-[12px] leading-5 text-muted">
+              <Info
+                size={15}
+                className="mt-0.5 shrink-0 text-accent"
+                aria-hidden="true"
+              />
+
+              {t('analysis.attentionNote')}
             </p>
           </div>
-
-          <p className="mt-4 flex gap-2 text-[12px] leading-5 text-muted">
-            <Info
-              size={15}
-              className="mt-0.5 shrink-0 text-accent"
-              aria-hidden="true"
-            />
-
-            Grad-CAM shows where the model focused its attention.
-            It does not detect individual lesions.
-          </p>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Recommendation + report */}
       <section
@@ -563,7 +597,7 @@ function AnalysisResultPage() {
             id="recommendation-heading"
             className="text-[16px] font-semibold text-ink"
           >
-            Recommendation
+            {t('analysis.recommendation')}
           </h3>
 
           <p className="mt-2 text-[15px] font-semibold text-danger">
@@ -598,8 +632,8 @@ function AnalysisResultPage() {
             )}
 
             {isGeneratingReport
-              ? 'Generating…'
-              : 'Generate Report'}
+              ? t('analysis.generating')
+              : t('analysis.generateReport')}
           </button>
 
           {reportMessage && (
