@@ -1,0 +1,239 @@
+{
+  "navigation": {
+    "dashboard": "डैशबोर्ड",
+    "newScreening": "नई स्क्रीनिंग",
+    "history": "इतिहास",
+    "resourcePlanning": "संसाधन योजना",
+    "workspace": "कार्यक्षेत्र",
+    "support": "सहायता",
+    "help": "सहायता और मार्गदर्शिका",
+    "notifications": "सूचनाएं"
+  },
+  "header": {
+    "searchPlaceholder": "मरीजों, स्क्रीनिंग, रिकॉर्ड खोजें...",
+    "notificationsTitle": "सूचनाएं",
+    "notificationsNew": "{{count}} नई",
+    "recentUpdates": "हालिया अपडेट",
+    "markAllRead": "सभी को पढ़ा हुआ मार्क करें",
+    "profile": "प्रोफ़ाइल",
+    "signOut": "साइन आउट",
+    "switchView": "{{role}} व्यू पर स्विच करें",
+    "roles": {
+      "clinician": "क्लिनिशियन",
+      "technician": "तकनीशियन"
+    },
+    "notifications": {
+      "n1_title": "नई स्क्रीनिंग पूरी हुई",
+      "n1_desc": "मरीज P-1024 · समीक्षा के लिए Moderate NPDR चिह्नित।",
+      "n2_title": "लंबित समीक्षा कतार",
+      "n2_desc": "3 स्क्रीनिंग क्लिनिशियन के हस्ताक्षर की प्रतीक्षा कर रही हैं।",
+      "n3_title": "साप्ताहिक सारांश तैयार",
+      "n3_desc": "इस सप्ताह के बैच में 12 रेफरल मिले।",
+      "n4_title": "मॉडल अपडेट उपलब्ध",
+      "n4_desc": "DR ग्रेडिंग मॉडल v2.4 इंस्टॉल करने के लिए तैयार है।",
+      "time_now": "अभी-अभी",
+      "time_15m": "15 मिनट पहले",
+      "time_2h": "2 घंटे पहले",
+      "time_yesterday": "कल"
+    }
+  },
+  "dashboard": {
+    "overview": "स्क्रीनिंग अवलोकन",
+    "greeting": "सुप्रभात,",
+    "subtext": "डायबिटिक रेटिनोपैथी (Diabetic Retinopathy) स्क्रीनिंग गतिविधि की निगरानी करें और मरीजों के परिणामों का प्रबंधन करें।",
+    "clinic": "क्लिनिक",
+    "recentActivity": "हालिया गतिविधि",
+    "recentScreenings": "हालिया स्क्रीनिंग",
+    "viewAll": "सभी देखें",
+    "newScreeningBtn": "नई स्क्रीनिंग",
+    "metrics": {
+      "totalScreenings": "कुल स्क्रीनिंग",
+      "referableCases": "रेफरल आवश्यक मामले (Referable Cases)",
+      "pendingReviews": "लंबित समीक्षाएं",
+      "thisMonth": "इस महीने",
+      "requireReview": "नेत्र रोग विशेषज्ञ की समीक्षा आवश्यक",
+      "awaitingReview": "क्लिनिकल समीक्षा की प्रतीक्षा",
+      "thisWeek": "इस सप्ताह +12",
+      "vsLastWeek": "पिछले सप्ताह की तुलना में +3",
+      "cleared": "−2 क्लियर किए गए"
+    }
+  },
+  "screening": {
+    "title": "नई स्क्रीनिंग",
+    "subtitle": "मरीज का विवरण दर्ज करें और विश्लेषण के लिए फंडस इमेज (Fundus Image) अपलोड करें।",
+    "patientInfo": "मरीज की जानकारी",
+    "labels": {
+      "patientId": "मरीज आईडी",
+      "fullName": "पूरा नाम",
+      "age": "आयु",
+      "gender": "लिंग",
+      "selectGender": "लिंग चुनें"
+    },
+    "fundusImage": "फंडस इमेज (Fundus Image)",
+    "uploadTitle": "फंडस इमेज अपलोड करें",
+    "uploadSub": "ड्रैग और ड्रॉप करें या ब्राउज़ करने के लिए क्लिक करें",
+    "uploadMeta": "JPG या PNG",
+    "removeImage": "इमेज हटाएं",
+    "analyzeBtn": "इमेज का विश्लेषण करें",
+    "analyzing": "विश्लेषण हो रहा है...",
+    "errors": {
+      "invalidType": "कृपया JPG, JPEG, या PNG इमेज चुनें।",
+      "tooLarge": "इमेज 10 MB से छोटी होनी चाहिए।",
+      "patientIdRequired": "मरीज आईडी आवश्यक है।",
+      "fullNameRequired": "पूरा नाम आवश्यक है।",
+      "ageInvalid": "1 और 120 के बीच आयु दर्ज करें।",
+      "genderRequired": "लिंग चुनें।",
+      "imageRequired": "कृपया एक फंडस इमेज चुनें।",
+      "generic": "एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।"
+    }
+  },
+  "analysis": {
+    "title": "विश्लेषण परिणाम",
+    "subtitle": "AI-सहायता प्राप्त डायबिटिक रेटिनोपैथी स्क्रीनिंग परिणाम",
+    "case": "केस #",
+    "patientInfo": "मरीज की जानकारी",
+    "labels": {
+      "patientId": "मरीज आईडी",
+      "patientName": "मरीज का नाम",
+      "age": "आयु",
+      "gender": "लिंग",
+      "date": "स्क्रीनिंग तिथि"
+    },
+    "drDetected": "DR पाया गया",
+    "noReferable": "कोई रेफरल आवश्यक DR नहीं",
+    "referOpthal": "नेत्र रोग विशेषज्ञ (Ophthalmologist) को रेफर करें",
+    "routineFollow": "नियमित फॉलो-अप",
+    "fundusImage": "फंडस इमेज (Fundus Image)",
+    "originalImage": "मूल फंडस इमेज",
+    "gradCam": "Grad-CAM विज़ुअलाइज़ेशन",
+    "noImage": "इस व्यू के लिए कोई इमेज उपलब्ध नहीं है",
+    "tabs": {
+      "original": "मूल",
+      "gradCam": "Grad-CAM"
+    },
+    "classification": "वर्गीकरण",
+    "confidence": "मॉडल कॉन्फिडेंस",
+    "inferenceTime": "इनफेरेंस समय",
+    "confidenceDisclaimer": "कॉन्फिडेंस मॉडल आउटपुट को दर्शाता है और इसे क्लिनिकल समीक्षा के साथ देखा जाना चाहिए।",
+    "probabilities": "क्लास प्रोबेबिलिटी",
+    "whyThisResult": "यह परिणाम क्यों?",
+    "explainabilityText": "मॉडल की भविष्यवाणी विज़ुअल अटेंशन विश्लेषण द्वारा समर्थित है।",
+    "attentionBoxTitle": "AI अटेंशन (Grad-CAM)",
+    "attentionBoxText": "हाइलाइट किए गए क्षेत्र उन क्षेत्रों को दर्शाते हैं जिन्होंने मॉडल की भविष्यवाणी में सबसे अधिक योगदान दिया। यह एक व्याख्यात्मक विज़ुअलाइज़ेशन है, लीजन डिटेक्टर नहीं।",
+    "attentionNote": "Grad-CAM दिखाता है कि मॉडल ने अपना ध्यान कहाँ केंद्रित किया। यह व्यक्तिगत लीजन्स का पता नहीं लगाता है।",
+    "recommendation": "सिफारिश",
+    "referTitle": "नेत्र रोग विशेषज्ञ को रेफर करें",
+    "referText": "रेफरल आवश्यक डायबिटिक रेटिनोपैथी का पता चला है। नेत्र रोग विशेषज्ञ द्वारा क्लिनिकल मूल्यांकन की सिफारिश की जाती है।",
+    "routineTitle": "नियमित फॉलो-अप",
+    "routineText": "कोई रेफरल आवश्यक डायबिटिक रेटिनोपैथी नहीं पाया गया। क्लिनिकल दिशानिर्देशों के अनुसार नियमित स्क्रीनिंग जारी रखें।",
+    "generateReport": "रिपोर्ट जेनरेट करें",
+    "generating": "जेनरेट हो रहा है…",
+    "reportReady": "रिपोर्ट तैयार है — डाउनलोड करने के लिए अपने ब्राउज़र के “Save as PDF” विकल्प का उपयोग करें।",
+    "reportError": "रिपोर्ट जेनरेट नहीं हो सकी: {{error}}",
+    "reportGenericError": "रिपोर्ट जेनरेट नहीं हो सकी। कृपया पुनः प्रयास करें।",
+    "errors": {
+      "noId": "कोई स्क्रीनिंग आईडी प्रदान नहीं की गई।",
+      "generic": "स्क्रीनिंग परिणाम लोड करने में विफल।"
+    }
+  },
+  "history": {
+    "title": "स्क्रीनिंग इतिहास",
+    "subtitle": "पिछले डायबिटिक रेटिनोपैथी स्क्रीनिंग परिणामों की समीक्षा करें।",
+    "searchPlaceholder": "मरीज के नाम या आईडी से खोजें",
+    "statusLabel": "DR स्थिति",
+    "previousScreenings": "पिछली स्क्रीनिंग",
+    "tableHeaders": {
+      "patient": "मरीज",
+      "patientId": "मरीज आईडी",
+      "date": "तिथि",
+      "grade": "DR ग्रेड",
+      "status": "स्थिति",
+      "action": "एक्शन"
+    },
+    "view": "देखें",
+    "emptyTitle": "अभी तक कोई स्क्रीनिंग रिकॉर्ड नहीं",
+    "noFoundTitle": "कोई स्क्रीनिंग नहीं मिली",
+    "noFoundDesc": "किसी अन्य मरीज के नाम या आईडी से खोजने का प्रयास करें।",
+    "startNewBtn": "नई स्क्रीनिंग शुरू करें",
+    "retry": "पुनः प्रयास करें",
+    "grades": {
+      "No DR": "कोई DR नहीं",
+      "Mild NPDR": "Mild NPDR",
+      "Moderate NPDR": "Moderate NPDR",
+      "Severe NPDR": "Severe NPDR",
+      "Proliferative DR": "Proliferative DR"
+    },
+    "statuses": {
+      "Normal": "सामान्य",
+      "Monitor": "निगरानी",
+      "Refer": "रेफर"
+    }
+  },
+  "resource": {
+    "title": "संसाधन योजना",
+    "subtitle": "DR स्क्रीनिंग के लिए Simulink क्यूइंग सिमुलेशन पर आधारित क्षमता योजना विश्लेषण।",
+    "simulationResults": "प्री-कंप्यूटेड सिमुलेशन परिणाम",
+    "keyFindingTitle": "मुख्य निष्कर्ष",
+    "keyFindingText": "AI प्रोसेसिंग थ्रूपुट (3,600 इमेज/घंटा) मानव समीक्षा क्षमता से काफी तेज है — मानव नेत्र रोग विशेषज्ञ की समीक्षा सिस्टम की बाधा (bottleneck) है, AI इनफेरेंस नहीं।",
+    "comparisonTitle": "परिदृश्य तुलना",
+    "comparisonSub": "विभिन्न अराइवल दरों के तहत सिस्टम प्रदर्शन पर समीक्षक स्टाफिंग का प्रभाव।",
+    "tableHeaders": {
+      "scenario": "परिदृश्य",
+      "reviewers": "समीक्षक",
+      "arrivalRate": "पीक अराइवल दर",
+      "queueLength": "अधिकतम क्यू लंबाई",
+      "waitTime": "अधिकतम प्रतीक्षा समय",
+      "utilization": "समीक्षा उपयोग %"
+    },
+    "slaNote": "30-मिनट प्रतीक्षा समय SLA (PS 26038 ह्यूमन-इन-द-लूप आवश्यकता के अनुसार) केवल सिंगल-रिव्यूअर पीक परिदृश्य में बाधित होता है — जो बड़े पैमाने पर पर्याप्त समीक्षक स्टाफिंग की आवश्यकता को दर्शाता है।",
+    "vizTitle": "सिमुलेशन विज़ुअलाइज़ेशन",
+    "vizSub": "प्री-कंप्यूटेड Simulink चार्ट जो क्यू लंबाई और प्रतीक्षा समय के रुझान दिखाते हैं।",
+    "closeModal": "मोडल बंद करें"
+  },
+  "auth": {
+    "brand": "RETINA",
+    "access": {
+      "clinician": "क्लिनिकल एक्सेस",
+      "technician": "तकनीकी एक्सेस"
+    },
+    "heroHeadline": "गहराई से देखें। जल्दी स्क्रीन करें।",
+    "attentionLabel": "मॉडल अटेंशन",
+    "attentionTitle": "Grad-CAM विज़ुअलाइज़ेशन",
+    "attentionDesc": "मॉडल व्याख्या के लिए।",
+    "secureSignIn": "सुरक्षित साइन इन",
+    "welcome": "आपका स्वागत है, {{role}}।",
+    "welcomeRoles": {
+      "clinician": "डॉक्टर",
+      "technician": "तकनीशियन"
+    },
+    "labels": {
+      "email": "ईमेल या {{role}} आईडी",
+      "password": "पासवर्ड",
+      "forgot": "भूल गए?",
+      "keepSignedIn": "मुझे इस डिवाइस पर साइन इन रखें"
+    },
+    "buttons": {
+      "signIn": "RETINA में साइन इन करें",
+      "signInLoading": "कार्यक्षेत्र खोल रहा है…",
+      "requestAccess": "{{role}} एक्सेस का अनुरोध करें"
+    },
+    "errors": {
+      "emailRequired": "अपना ईमेल दर्ज करें।",
+      "emailInvalid": "एक वैध ईमेल दर्ज करें।",
+      "passwordRequired": "अपना पासवर्ड दर्ज करें।",
+      "passwordTooShort": "पासवर्ड कम से कम 6 वर्णों का होना चाहिए।",
+      "apiError": "लॉगिन विफल रहा। कृपया अपने क्रेडेंशियल्स की जाँच करें।"
+    },
+    "footer": {
+      "demo": "केवल अनुसंधान प्रदर्शन के लिए · प्रमाणित चिकित्सा उपकरण नहीं",
+      "copyright": "© 2026 RETINA कंसोर्टियम",
+      "builtInIndia": "भारत में निर्मित"
+    }
+  },
+  "common": {
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "backToHistory": "इतिहास पर वापस जाएं",
+    "newScreening": "नई स्क्रीनिंग"
+  }
+}

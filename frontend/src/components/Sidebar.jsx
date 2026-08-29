@@ -1,16 +1,24 @@
 import {  Bell, BarChart2, ClipboardPlus, HelpCircle, History, LayoutDashboard, LifeBuoy, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useSidebar } from '../context/SidebarContext'
+import { useAuth } from '../context/AuthContext'
+import { useTranslation } from '../context/LanguageContext'
 
 const navigationItems = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard, end: true },
-  { label: 'New Screening', to: '/new-screening', icon: ClipboardPlus },
-  { label: 'History', to: '/history', icon: History },
-  { label: 'Resource Planning', to: '/resource-planning', icon: BarChart2 },
+  { label: 'navigation.dashboard', to: '/', icon: LayoutDashboard, end: true, roles: ['clinician', 'technician'] },
+  { label: 'navigation.newScreening', to: '/new-screening', icon: ClipboardPlus, roles: ['clinician', 'technician'] },
+  { label: 'navigation.history', to: '/history', icon: History, roles: ['clinician', 'technician'] },
+  { label: 'navigation.resourcePlanning', to: '/resource-planning', icon: BarChart2, roles: ['clinician'] },
 ]
 
 function Sidebar() {
   const { collapsed, toggleCollapsed } = useSidebar()
+  const { session, activeRole } = useAuth()
+  const { t } = useTranslation()
+
+  const filteredNavItems = navigationItems.filter(
+    (item) => item.roles.includes(activeRole || session?.role || 'clinician')
+  )
 
   return (
     <aside
@@ -94,7 +102,7 @@ function Sidebar() {
     RETINA
   </span>
 )}
-        
+
       </div>
 
       {/* Collapse / expand control */}
@@ -125,16 +133,16 @@ function Sidebar() {
       >
         {!collapsed && (
           <p className="mb-3 px-3 text-[10.5px] font-semibold uppercase tracking-[0.28em] text-[#6E8294]">
-            Workspace
+            {t('navigation.workspace')}
           </p>
         )}
         <div className="space-y-1">
-          {navigationItems.map(({ label, to, icon: Icon, end }) => (
+          {filteredNavItems.map(({ label, to, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
-              title={collapsed ? label : undefined}
+              title={collapsed ? t(label) : undefined}
               className={({ isActive }) =>
                 `retina-nav-item flex items-center gap-3 text-[13.5px] font-medium ${
                   collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
@@ -142,7 +150,7 @@ function Sidebar() {
               }
             >
               <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
-              {!collapsed && <span className="tracking-[0.005em]">{label}</span>}
+              {!collapsed && <span className="tracking-[0.005em]">{t(label)}</span>}
             </NavLink>
           ))}
         </div>
@@ -152,29 +160,29 @@ function Sidebar() {
       <div className="border-t border-[rgba(255,255,255,0.06)] px-4 py-5">
         {!collapsed && (
           <p className="mb-2 px-3 text-[10.5px] font-semibold uppercase tracking-[0.28em] text-[#6E8294]">
-            Support
+            {t('navigation.support')}
           </p>
         )}
         <div className="space-y-1">
           <a
             href="#help"
-            title={collapsed ? 'Help & Guides' : undefined}
+            title={collapsed ? t('navigation.help') : undefined}
             className={`retina-nav-item flex items-center gap-3 py-2 text-[13px] font-medium text-[#B8C5CF] ${
               collapsed ? 'justify-center px-2' : 'px-3'
             }`}
           >
             <HelpCircle size={16} strokeWidth={1.8} aria-hidden="true" />
-            {!collapsed && 'Help & Guides'}
+            {!collapsed && t('navigation.help')}
           </a>
           <a
             href="#alerts"
-            title={collapsed ? 'Notifications' : undefined}
+            title={collapsed ? t('navigation.notifications') : undefined}
             className={`retina-nav-item flex items-center gap-3 py-2 text-[13px] font-medium text-[#B8C5CF] ${
               collapsed ? 'justify-center px-2' : 'px-3'
             }`}
           >
             <Bell size={16} strokeWidth={1.8} aria-hidden="true" />
-            {!collapsed && 'Notifications'}
+            {!collapsed && t('navigation.notifications')}
           </a>
         </div>
 
@@ -182,7 +190,7 @@ function Sidebar() {
           className={`mt-5 flex items-center gap-3 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] ${
             collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
           }`}
-          title={collapsed ? 'Dr. Sharma · Clinician' : undefined}
+          title={collapsed ? `Dr. Sharma · ${session?.role || 'Clinician'}` : undefined}
         >
           <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[rgba(18,199,200,0.14)] text-[11px] font-semibold text-[#12C7C8]">
             DS
@@ -193,7 +201,7 @@ function Sidebar() {
                 Dr. Sharma
               </p>
               <p className="truncate text-[10.5px] uppercase tracking-[0.18em] text-[#6E8294]">
-                Clinician
+                {session?.role || 'Clinician'}
               </p>
             </div>
           )}

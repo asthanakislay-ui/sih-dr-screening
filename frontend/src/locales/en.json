@@ -1,0 +1,240 @@
+{
+  "navigation": {
+    "dashboard": "Dashboard",
+    "newScreening": "New Screening",
+    "history": "History",
+    "resourcePlanning": "Resource Planning",
+    "workspace": "Workspace",
+    "support": "Support",
+    "help": "Help & Guides",
+    "notifications": "Notifications"
+  },
+  "header": {
+    "searchPlaceholder": "Search patients, screenings, records...",
+    "notificationsTitle": "Notifications",
+    "notificationsNew": "{{count}} new",
+    "recentUpdates": "Recent updates",
+    "markAllRead": "Mark all as read",
+    "profile": "Profile",
+    "signOut": "Sign out",
+    "switchView": "Switch to {{role}} View",
+    "roles": {
+      "clinician": "Clinician",
+      "technician": "Technician"
+    },
+    "notifications": {
+      "n1_title": "New screening completed",
+      "n1_desc": "Patient P-1024 · Moderate NPDR flagged for review.",
+      "n2_title": "Pending review queue",
+      "n2_desc": "3 screenings are awaiting clinician sign-off.",
+      "n3_title": "Weekly summary ready",
+      "n3_desc": "12 referrals detected across this week’s batch.",
+      "n4_title": "Model update available",
+      "n4_desc": "DR grading model v2.4 is ready to install.",
+      "time_now": "Just now",
+      "time_15m": "15 min ago",
+      "time_2h": "2 hours ago",
+      "time_yesterday": "Yesterday"
+    }
+  },
+  "dashboard": {
+    "overview": "Screening Overview",
+    "greeting": "Good morning,",
+    "subtext": "Monitor diabetic retinopathy screening activity and manage patient outcomes.",
+    "clinic": "Clinic",
+    "recentActivity": "Recent activity",
+    "recentScreenings": "Recent Screenings",
+    "viewAll": "View all",
+    "newScreeningBtn": "New Screening",
+    "metrics": {
+      "totalScreenings": "Total Screenings",
+      "referableCases": "Referable Cases",
+      "pendingReviews": "Pending Reviews",
+      "thisMonth": "This month",
+      "requireReview": "Require ophthalmologist review",
+      "awaitingReview": "Awaiting clinical review",
+      "thisWeek": "+12 this week",
+      "vsLastWeek": "+3 vs last week",
+      "cleared": "−2 cleared"
+    }
+  },
+  "screening": {
+    "title": "New Screening",
+    "subtitle": "Enter patient details and upload a fundus image for analysis.",
+    "patientInfo": "Patient Information",
+    "labels": {
+      "patientId": "Patient ID",
+      "fullName": "Full Name",
+      "age": "Age",
+      "gender": "Gender",
+      "selectGender": "Select gender"
+    },
+    "fundusImage": "Fundus Image",
+    "uploadTitle": "Upload fundus image",
+    "uploadSub": "Drag and drop or click to browse",
+    "uploadMeta": "JPG or PNG",
+    "removeImage": "Remove image",
+    "analyzeBtn": "Analyze Image",
+    "analyzing": "Analyzing...",
+    "errors": {
+      "invalidType": "Please choose a JPG, JPEG, or PNG image.",
+      "tooLarge": "Image must be smaller than 10 MB.",
+      "patientIdRequired": "Patient ID is required.",
+      "fullNameRequired": "Full name is required.",
+      "ageInvalid": "Enter an age between 1 and 120.",
+      "genderRequired": "Select a gender.",
+      "imageRequired": "Please select a fundus image.",
+      "generic": "An unexpected error occurred. Please try again."
+    }
+  },
+  "analysis": {
+    "title": "Analysis Result",
+    "subtitle": "AI-assisted diabetic retinopathy screening result",
+    "case": "Case #",
+    "patientInfo": "Patient Information",
+    "labels": {
+      "patientId": "Patient ID",
+      "patientName": "Patient Name",
+      "age": "Age",
+      "gender": "Gender",
+      "date": "Screening Date"
+    },
+    "drDetected": "DR DETECTED",
+    "noReferable": "NO REFERABLE DR",
+    "referOpthal": "REFER TO OPHTHALMOLOGIST",
+    "routineFollow": "ROUTINE FOLLOW-UP",
+    "fundusImage": "Fundus Image",
+    "originalImage": "Original fundus image",
+    "gradCam": "Grad-CAM visualization",
+    "noImage": "No image available for this view",
+    "tabs": {
+      "original": "Original",
+      "gradCam": "Grad-CAM"
+    },
+    "classification": "Classification",
+    "confidence": "Model confidence",
+    "inferenceTime": "Inference time",
+    "confidenceDisclaimer": "Confidence reflects the model output and should be considered alongside clinical review.",
+    "probabilities": "Class Probabilities",
+    "whyThisResult": "Why this result?",
+    "explainabilityText": "The model's prediction is supported by visual attention analysis.",
+    "attentionBoxTitle": "AI Attention (Grad-CAM)",
+    "attentionBoxText": "The highlighted regions indicate areas that contributed most to the model's prediction. This is an explainability visualization, not a lesion detector.",
+    "attentionNote": "Grad-CAM shows where the model focused its attention. It does not detect individual lesions.",
+    "recommendation": "Recommendation",
+    "referTitle": "Refer to ophthalmologist",
+    "referText": "Referable diabetic retinopathy was detected. Clinical evaluation by an ophthalmologist is recommended.",
+    "routineTitle": "Routine follow-up",
+    "routineText": "No referable diabetic retinopathy detected. Continue routine screening per clinical guidelines.",
+    "generateReport": "Generate Report",
+    "generating": "Generating…",
+    "reportReady": "Report ready — use your browser’s “Save as PDF” option to download.",
+    "reportError": "Could not generate report: {{error}}",
+    "reportGenericError": "Could not generate report. Please try again.",
+    "errors": {
+      "noId": "No screening ID provided.",
+      "generic": "Failed to load screening results."
+    }
+  },
+  "history": {
+    "title": "Screening History",
+    "subtitle": "Review previous diabetic retinopathy screening results.",
+    "searchPlaceholder": "Search by patient name or ID",
+    "statusLabel": "DR status",
+    "previousScreenings": "Previous Screenings",
+    "tableHeaders": {
+      "patient": "Patient",
+      "patientId": "Patient ID",
+      "date": "Date",
+      "grade": "DR Grade",
+      "status": "Status",
+      "action": "Action"
+    },
+    "view": "View",
+    "emptyTitle": "No screening records yet",
+    "noFoundTitle": "No screenings found",
+    "noFoundDesc": "Try searching with a different patient name or ID.",
+    "startNewBtn": "Start New Screening",
+    "retry": "Retry",
+    "grades": {
+      "No DR": "No DR",
+      "Mild NPDR": "Mild NPDR",
+      "Moderate NPDR": "Moderate NPDR",
+      "Severe NPDR": "Severe NPDR",
+      "Proliferative DR": "Proliferative DR"
+    },
+    "statuses": {
+      "Normal": "Normal",
+      "Monitor": "Monitor",
+      "Refer": "Refer"
+    }
+  },
+  "resource": {
+    "title": "Resource Planning",
+    "subtitle": "Capacity planning analysis based on Simulink queueing simulations for DR screening.",
+    "simulationResults": "Precomputed Simulation Results",
+    "keyFindingTitle": "Key Finding",
+    "keyFindingText": "AI processing throughput (3,600 images/hour) is significantly faster than human review capacity — human ophthalmologist review is the system bottleneck, not AI inference.",
+    "comparisonTitle": "Scenario Comparison",
+    "comparisonSub": "Impact of reviewer staffing on system performance under various arrival rates.",
+    "tableHeaders": {
+      "scenario": "Scenario",
+      "reviewers": "Reviewers",
+      "arrivalRate": "Peak Arrival Rate",
+      "queueLength": "Max Queue Length",
+      "waitTime": "Max Wait Time",
+      "utilization": "Review Utilization %"
+    },
+    "slaNote": "30-minute wait time SLA (per PS 26038 human-in-the-loop requirement) is violated only in the single-reviewer peak scenario — demonstrating the need for adequate reviewer staffing at scale.",
+    "vizTitle": "Simulation Visualizations",
+    "vizSub": "Precomputed Simulink charts showing queue length and wait time trends.",
+    "closeModal": "Close modal"
+  },
+  "auth": {
+    "brand": "RETINA",
+    "access": {
+      "clinician": "Clinical Access",
+      "technician": "Technical Access"
+    },
+    "heroHeadline": "See deeper. Screen earlier.",
+    "attentionLabel": "Model Attention",
+    "attentionTitle": "Grad-CAM visualization",
+    "attentionDesc": "for model interpretation.",
+    "secureSignIn": "Secure Sign In",
+    "welcome": "Welcome back, {{role}}.",
+    "welcomeRoles": {
+      "clinician": "doctor",
+      "technician": "technician"
+    },
+    "signInSub": "Sign in to continue a screening session.",
+    "labels": {
+      "email": "Email or {{role}} ID",
+      "password": "Password",
+      "forgot": "Forgot?",
+      "keepSignedIn": "Keep me signed in on this device"
+    },
+    "buttons": {
+      "signIn": "Sign in to RETINA",
+      "signInLoading": "Opening workspace…",
+      "requestAccess": "Request {{role}} access"
+    },
+    "errors": {
+      "emailRequired": "Enter your email.",
+      "emailInvalid": "Enter a valid email.",
+      "passwordRequired": "Enter your password.",
+      "passwordTooShort": "Password must be at least 6 characters.",
+      "apiError": "Login failed. Please check your credentials."
+    },
+    "footer": {
+      "demo": "For research demonstration only · Not a certified medical device",
+      "copyright": "© 2026 RETINA Consortium",
+      "builtInIndia": "Built in India"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "backToHistory": "Back to History",
+    "newScreening": "New Screening"
+  }
+}

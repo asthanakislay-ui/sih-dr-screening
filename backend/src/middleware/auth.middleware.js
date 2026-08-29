@@ -19,6 +19,7 @@ const protect = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded.id;
+    req.userRole = decoded.role;
 
     next();
   } catch (error) {
@@ -35,4 +36,28 @@ const protect = (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+/**
+ * Middleware that restricts access to users with specific roles.
+ * @param {string[]} allowedRoles - Array of roles allowed to access the route.
+ */
+const authorize = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.userRole) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. User role not found.',
+      });
+    }
+
+    if (!allowedRoles.includes(req.userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Role ${req.userRole} is not authorized to access this resource.`,
+      });
+    }
+
+    next();
+  };
+};
+
+module.exports = { protect, authorize };

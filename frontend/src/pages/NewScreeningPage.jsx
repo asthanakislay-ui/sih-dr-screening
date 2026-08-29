@@ -9,6 +9,7 @@ import {
 } from '../data/screeningData'
 import { predictScreening, saveScreening } from '../services/screeningService'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from '../context/LanguageContext'
 
 const initialErrors = {}
 
@@ -19,6 +20,7 @@ function formatFileSize(bytes) {
 function NewScreeningPage() {
   const navigate = useNavigate()
   const { session } = useAuth()
+  const { t } = useTranslation()
 
   const fileInputRef = useRef(null)
   const previewUrlRef = useRef('')
@@ -69,7 +71,7 @@ function NewScreeningPage() {
     if (!acceptedImageTypes.includes(file.type)) {
       setErrors((currentErrors) => ({
         ...currentErrors,
-        image: 'Please choose a JPG, JPEG, or PNG image.',
+        image: t('screening.errors.invalidType'),
       }))
       return false
     }
@@ -77,7 +79,7 @@ function NewScreeningPage() {
     if (file.size > maxImageSize) {
       setErrors((currentErrors) => ({
         ...currentErrors,
-        image: 'Image must be smaller than 10 MB.',
+        image: t('screening.errors.tooLarge'),
       }))
       return false
     }
@@ -138,23 +140,23 @@ function NewScreeningPage() {
     const nextErrors = {}
 
     if (!fields.patientId.trim()) {
-      nextErrors.patientId = 'Patient ID is required.'
+      nextErrors.patientId = t('screening.errors.patientIdRequired')
     }
 
     if (!fields.fullName.trim()) {
-      nextErrors.fullName = 'Full name is required.'
+      nextErrors.fullName = t('screening.errors.fullNameRequired')
     }
 
     if (!isValidAge) {
-      nextErrors.age = 'Enter an age between 1 and 120.'
+      nextErrors.age = t('screening.errors.ageInvalid')
     }
 
     if (!fields.gender) {
-      nextErrors.gender = 'Select a gender.'
+      nextErrors.gender = t('screening.errors.genderRequired')
     }
 
     if (!selectedFile) {
-      nextErrors.image = 'Please select a fundus image.'
+      nextErrors.image = t('screening.errors.imageRequired')
     }
 
     setErrors(nextErrors)
@@ -222,7 +224,7 @@ function NewScreeningPage() {
     } catch (err) {
       setApiError(
         err.message ||
-          'An unexpected error occurred. Please try again.',
+          t('screening.errors.generic'),
       )
     } finally {
       setIsAnalyzing(false)
@@ -233,10 +235,10 @@ function NewScreeningPage() {
     <div className="ns-shell">
       <div className="ns-container">
         <header className="ns-header">
-          <h1 className="ns-title">New Screening</h1>
+          <h1 className="ns-title">{t('screening.title')}</h1>
 
           <p className="ns-subtitle">
-            Enter patient details and upload a fundus image for analysis.
+            {t('screening.subtitle')}
           </p>
         </header>
 
@@ -253,12 +255,12 @@ function NewScreeningPage() {
               id="patient-information-heading"
               className="ns-card-title"
             >
-              Patient Information
+              {t('screening.patientInfo')}
             </h2>
 
             <div className="ns-fields">
               <Field
-                label="Patient ID"
+                label={t('screening.labels.patientId')}
                 name="patientId"
                 value={fields.patientId}
                 onChange={updateField}
@@ -266,7 +268,7 @@ function NewScreeningPage() {
               />
 
               <Field
-                label="Full Name"
+                label={t('screening.labels.fullName')}
                 name="fullName"
                 value={fields.fullName}
                 onChange={updateField}
@@ -274,7 +276,7 @@ function NewScreeningPage() {
               />
 
               <Field
-                label="Age"
+                label={t('screening.labels.age')}
                 name="age"
                 type="number"
                 min="1"
@@ -289,7 +291,7 @@ function NewScreeningPage() {
                   className="ns-label"
                   htmlFor="gender"
                 >
-                  Gender
+                  {t('screening.labels.gender')}
                 </label>
 
                 <select
@@ -299,7 +301,7 @@ function NewScreeningPage() {
                   onChange={updateField}
                   className="ns-input"
                 >
-                  <option value="">Select gender</option>
+                  <option value="">{t('screening.labels.selectGender')}</option>
 
                   {genderOptions.map((option) => (
                     <option
@@ -328,7 +330,7 @@ function NewScreeningPage() {
               id="fundus-image-heading"
               className="ns-card-title"
             >
-              Fundus Image
+              {t('screening.fundusImage')}
             </h2>
 
             {!selectedFile ? (
@@ -357,15 +359,15 @@ function NewScreeningPage() {
                 />
 
                 <span className="ns-dropzone-title">
-                  Upload fundus image
+                  {t('screening.uploadTitle')}
                 </span>
 
                 <span className="ns-dropzone-sub">
-                  Drag and drop or click to browse
+                  {t('screening.uploadSub')}
                 </span>
 
                 <span className="ns-dropzone-meta">
-                  JPG or PNG
+                  {t('screening.uploadMeta')}
                 </span>
               </button>
             ) : (
@@ -399,7 +401,7 @@ function NewScreeningPage() {
                       aria-hidden="true"
                     />
 
-                    Remove image
+                    {t('screening.removeImage')}
                   </button>
                 </div>
               </div>
@@ -452,8 +454,8 @@ function NewScreeningPage() {
 
               <span>
                 {isAnalyzing
-                  ? 'Analyzing...'
-                  : 'Analyze Image'}
+                  ? t('screening.analyzing')
+                  : t('screening.analyzeBtn')}
               </span>
             </button>
           </div>

@@ -34,7 +34,7 @@ const register = async (req, res, next) => {
     // Create user — password is hashed by the pre-save hook in User.js
     const user = await User.create({ name, email, password });
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     res.status(201).json({
       success: true,
@@ -43,6 +43,7 @@ const register = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
       token,
     });
@@ -81,7 +82,7 @@ const login = async (req, res, next) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     res.status(200).json({
       success: true,
@@ -89,6 +90,7 @@ const login = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
       token,
     });
@@ -116,6 +118,7 @@ const getMe = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
         createdAt: user.createdAt,
       },
     });

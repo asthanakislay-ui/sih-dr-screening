@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { historyStatusOptions } from '../data/historyData'
 import { getScreenings, UnauthorizedError } from '../services/screeningService'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from '../context/LanguageContext'
 
 const statusStyles = {
   Normal: 'bg-[#edf7f1] text-success',
@@ -14,6 +15,8 @@ const statusStyles = {
 function HistoryPage() {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
+  const { t, language } = useTranslation()
+  const isTechnician = session?.role === 'technician'
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [screenings, setScreenings] = useState([])
@@ -63,8 +66,8 @@ function HistoryPage() {
   return (
     <div className="mx-auto w-full max-w-[1280px]">
       <section>
-        <h2 className="text-[26px] font-semibold tracking-[-0.025em] text-ink">Screening History</h2>
-        <p className="mt-1 text-[14px] text-muted">Review previous diabetic retinopathy screening results.</p>
+        <h2 className="text-[26px] font-semibold tracking-[-0.025em] text-ink">{t('history.title')}</h2>
+        <p className="mt-1 text-[14px] text-muted">{t('history.subtitle')}</p>
       </section>
 
       <section className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" aria-label="History search and filter">
@@ -75,12 +78,12 @@ function HistoryPage() {
             type="search"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search by patient name or ID"
+            placeholder={t('history.searchPlaceholder')}
             className="w-full border border-line bg-panel py-2.5 pl-10 pr-3 text-[13px] text-ink outline-none focus:border-accent"
           />
         </label>
         <label className="flex shrink-0 items-center gap-2 text-[13px] font-medium text-ink">
-          <span>DR status</span>
+          <span>{t('history.statusLabel')}</span>
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="border border-line bg-panel px-3 py-2.5 text-[13px] text-ink outline-none focus:border-accent">
             {historyStatusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
@@ -88,7 +91,7 @@ function HistoryPage() {
       </section>
 
       <section className="mt-8" aria-labelledby="previous-screenings-heading">
-        <h3 id="previous-screenings-heading" className="mb-4 text-[18px] font-semibold tracking-[-0.015em] text-ink">Previous Screenings</h3>
+        <h3 id="previous-screenings-heading" className="mb-4 text-[18px] font-semibold tracking-[-0.015em] text-ink">{t('history.previousScreenings')}</h3>
         <div className="overflow-hidden border border-line bg-panel shadow-[0_1px_3px_rgba(32,42,49,0.04)]">
           {isLoading ? (
             <div className="flex items-center justify-center py-14">
@@ -108,13 +111,13 @@ function HistoryPage() {
             </div>
           ) : screenings.length === 0 ? (
             <HistoryState
-              title="No screening records yet"
+              title={t('history.emptyTitle')}
               onAction={() => navigate('/new-screening')}
             />
           ) : filteredScreenings.length === 0 ? (
             <HistoryState
-              title="No screenings found"
-              description="Try searching with a different patient name or ID."
+              title={t('history.noFoundTitle')}
+              description={t('history.noFoundDesc')}
               onAction={() => navigate('/new-screening')}
             />
           ) : (
@@ -122,12 +125,12 @@ function HistoryPage() {
               <table className="w-full min-w-[760px] border-collapse text-left">
                 <thead className="border-b border-line bg-surface">
                   <tr className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted">
-                    <th className="px-6 py-3.5">Patient</th>
-                    <th className="px-6 py-3.5">Patient ID</th>
-                    <th className="px-6 py-3.5">Date</th>
-                    <th className="px-6 py-3.5">DR Grade</th>
-                    <th className="px-6 py-3.5">Status</th>
-                    <th className="px-6 py-3.5 text-right">Action</th>
+                    <th className="px-6 py-3.5">{t('history.tableHeaders.patient')}</th>
+                    <th className="px-6 py-3.5">{t('history.tableHeaders.patientId')}</th>
+                    <th className="px-6 py-3.5">{t('history.tableHeaders.date')}</th>
+                    {!isTechnician && <th className="px-6 py-3.5">{t('history.tableHeaders.grade')}</th>}
+                    <th className="px-6 py-3.5">{t('history.tableHeaders.status')}</th>
+                    <th className="px-6 py-3.5 text-right">{t('history.tableHeaders.action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -135,17 +138,17 @@ function HistoryPage() {
                     const grade = screening.screening.drClassName
                     const isReferable = screening.screening.referable
                     const status = isReferable ? 'Refer' : (grade === 'No DR' ? 'Normal' : 'Monitor')
-                    const date = new Date(screening.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                    const date = new Date(screening.createdAt).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 
                     return (
                       <tr key={screening._id} className="text-[14px] text-ink">
                         <td className="whitespace-nowrap px-6 py-4 font-medium">{screening.patient.name}</td>
                         <td className="whitespace-nowrap px-6 py-4 text-muted">{screening.patient.id}</td>
                         <td className="whitespace-nowrap px-6 py-4 text-muted">{date}</td>
-                        <td className="whitespace-nowrap px-6 py-4">{grade}</td>
+                        {!isTechnician && <td className="whitespace-nowrap px-6 py-4">{t('history.grades.' + grade)}</td>}
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-2 py-1 text-[12px] font-semibold ${statusStyles[status]}`}>
-                            {status}
+                            {t('history.statuses.' + status)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -154,7 +157,7 @@ function HistoryPage() {
                             onClick={() => navigate(`/analysis-result/${screening._id}`)}
                             className="inline-flex items-center gap-1 text-[13px] font-semibold text-accent hover:text-ink"
                           >
-                            View
+                            {t('history.view')}
                             <ArrowUpRight size={14} strokeWidth={1.8} aria-hidden="true" />
                           </button>
                         </td>
@@ -182,7 +185,7 @@ function HistoryState({ title, description, onAction }) {
           onClick={onAction}
           className="mt-6 inline-flex items-center gap-2 bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#126b74]"
         >
-          {onAction.label || 'Start New Screening'}
+          {onAction.label || t('history.startNewBtn')}
         </button>
       )}
     </div>
