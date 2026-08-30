@@ -4,7 +4,7 @@ const generateToken = require('../utils/generateToken');
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
 const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     // Basic field validation
     if (!name || !email || !password) {
@@ -21,6 +21,13 @@ const register = async (req, res, next) => {
       });
     }
 
+    if (!role || !['clinician', 'technician'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid role (clinician or technician) is required.',
+      });
+    }
+
     // Check for duplicate email (also caught by the unique index + error middleware,
     // but an explicit check gives a clearer message upfront)
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -32,7 +39,7 @@ const register = async (req, res, next) => {
     }
 
     // Create user — password is hashed by the pre-save hook in User.js
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password, role });
 
     const token = generateToken(user._id, user.role);
 

@@ -24,6 +24,14 @@ function LoginPage() {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Registration states
+  const [pageMode, setPageMode] = useState('login') // 'login' | 'register'
+  const [regName, setRegName] = useState('')
+  const [regEmail, setRegEmail] = useState('')
+  const [regPassword, setRegPassword] = useState('')
+  const [regConfirmPassword, setRegConfirmPassword] = useState('')
+  const [regSuccess, setRegSuccess] = useState(false)
+
   function validate() {
     const next = {}
 
@@ -39,6 +47,25 @@ function LoginPage() {
       next.password = 'Password must be at least 6 characters.'
     }
 
+    return next
+  }
+
+  function validateRegister() {
+    const next = {}
+    if (!regName.trim()) next.name = 'Full name is required.'
+    if (!regEmail.trim()) {
+      next.email = 'Enter your email.'
+    } else if (!isValidEmailLike(regEmail.trim())) {
+      next.email = 'Enter a valid email.'
+    }
+    if (!regPassword) {
+      next.password = 'Enter your password.'
+    } else if (regPassword.length < 6) {
+      next.password = 'Password must be at least 6 characters.'
+    }
+    if (regConfirmPassword !== regPassword) {
+      next.confirm = 'Passwords do not match.'
+    }
     return next
   }
 
@@ -67,6 +94,28 @@ function LoginPage() {
         api:
           err?.message ||
           'Login failed. Please check your credentials.',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleRegister = async (event) => {
+    event.preventDefault()
+    const nextErrors = validateRegister()
+    setErrors(nextErrors)
+
+    if (Object.keys(nextErrors).length > 0) return
+
+    setIsSubmitting(true)
+    try {
+      const { register } = await import('../services/screeningService')
+      await register(regName.trim(), regEmail.trim(), regPassword, selectedRole)
+      setRegSuccess(true)
+      setPageMode('login')
+    } catch (err) {
+      setErrors({
+        api: err?.message || 'Registration failed. Please try again.',
       })
     } finally {
       setIsSubmitting(false)
@@ -326,7 +375,7 @@ function LoginPage() {
           <div className="login-form-card">
             <div className="login-form-meta">
               <span className="login-form-step">
-                01
+                {pageMode === 'login' ? '01' : '02'}
               </span>
 
               <span
@@ -335,30 +384,35 @@ function LoginPage() {
               />
 
               <span className="login-form-meta-label">
-                {t('auth.secureSignIn')}
+                {pageMode === 'login'
+                  ? t('auth.secureSignIn')
+                  : t('auth.registration.title')}
               </span>
             </div>
 
             <h2 className="login-form-title">
-              {t('auth.welcome', { role: t('auth.welcomeRoles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')) })}
+              {pageMode === 'login'
+                ? t('auth.welcome', {
+                    role: t('header.roles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')),
+                  })
+                : t('auth.registration.subtitle')}
             </h2>
 
             <p className="login-form-sub">
-              {t('auth.signInSub')}
+              {pageMode === 'login'
+                ? t('auth.signInSub')
+                : t('auth.registration.description')}
             </p>
 
-            {errors.api && (
-              <p
-                className="login-field-error"
-                role="alert"
-              >
-                {errors.api}
-              </p>
+            {regSuccess && (
+              <div className="bg-green-500/20 border border-green-500 text-green-400 p-3 rounded-md mb-6 text-sm text-center">
+                {t('auth.registration.success')}
+              </div>
             )}
 
             <form
               className="login-form"
-              onSubmit={handleSubmit}
+              onSubmit={pageMode === 'login' ? handleSubmit : handleRegister}
               noValidate
             >
               {/* Role Selector Toggle */}
@@ -387,188 +441,297 @@ function LoginPage() {
                 </button>
               </div>
 
-              <div className="login-field">
-                <label
-                  htmlFor="login-email"
-                  className="login-label"
-                >
-                  {t('auth.labels.email', { role: t('auth.roles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')) })}
-                </label>
+              {pageMode === 'login' ? (
+                <>
+                  <div className="login-field">
+                    <label
+                      htmlFor="login-email"
+                      className="login-label"
+                    >
+                      {t('auth.labels.email', { role: t('header.roles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')) })}
+                    </label>
 
-                <div className="login-input-row">
-                  <input
-                    id="login-email"
-                    name="email"
-                    type="email"
-                    autoComplete="username"
-                    inputMode="email"
-                    required
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value)
+                    <div className="login-input-row">
+                      <input
+                        id="login-email"
+                        name="email"
+                        type="email"
+                        autoComplete="username"
+                        inputMode="email"
+                        required
+                        value={email}
+                        onChange={(event) => {
+                          setEmail(event.target.value)
 
-                      if (errors.email) {
-                        setErrors((current) => ({
-                          ...current,
-                          email: '',
-                          api: '',
-                        }))
-                      }
-                    }}
-                    placeholder="name@phc.gov.in"
-                    aria-invalid={Boolean(errors.email)}
-                    aria-describedby={
-                      errors.email
-                        ? 'login-email-error'
-                        : undefined
-                    }
-                    className="login-input"
-                  />
-                </div>
+                          if (errors.email) {
+                            setErrors((current) => ({
+                              ...current,
+                              email: '',
+                              api: '',
+                            }))
+                          }
+                        }}
+                        placeholder="name@phc.gov.in"
+                        aria-invalid={Boolean(errors.email)}
+                        aria-describedby={
+                          errors.email
+                            ? 'login-email-error'
+                            : undefined
+                        }
+                        className="login-input"
+                      />
+                    </div>
 
-                {errors.email && (
-                  <p
-                    id="login-email-error"
-                    className="login-field-error"
-                    role="alert"
-                  >
-                    {errors.email}
-                  </p>
-                )}
-              </div>
+                    {errors.email && (
+                      <p
+                        id="login-email-error"
+                        className="login-field-error"
+                        role="alert"
+                      >
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="login-field">
-                <label
-                  htmlFor="login-password"
-                  className="login-label"
-                >
-                  <span>{t('auth.labels.password')}</span>
+                  <div className="login-field">
+                    <label
+                      htmlFor="login-password"
+                      className="login-label"
+                    >
+                      <span>{t('auth.labels.password')}</span>
 
-                  <a
-                    href="#"
-                    className="login-link"
-                    tabIndex={-1}
-                    onClick={(event) =>
-                      event.preventDefault()
-                    }
-                  >
-                    {t('auth.labels.forgot')}
-                  </a>
-                </label>
+                      <a
+                        href="#"
+                        className="login-link"
+                        tabIndex={-1}
+                        onClick={(event) =>
+                          event.preventDefault()
+                        }
+                      >
+                        {t('auth.labels.forgot')}
+                      </a>
+                    </label>
 
-                <div className="login-input-row">
-                  <input
-                    id="login-password"
-                    name="password"
-                    type={
-                      showPassword
-                        ? 'text'
-                        : 'password'
-                    }
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value)
+                    <div className="login-input-row">
+                      <input
+                        id="login-password"
+                        name="password"
+                        type={
+                          showPassword
+                            ? 'text'
+                            : 'password'
+                        }
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(event) => {
+                          setPassword(event.target.value)
 
-                      if (errors.password) {
-                        setErrors((current) => ({
-                          ...current,
-                          password: '',
-                          api: '',
-                        }))
-                      }
-                    }}
-                    placeholder="••••••••"
-                    aria-invalid={Boolean(errors.password)}
-                    aria-describedby={
-                      errors.password
-                        ? 'login-password-error'
-                        : undefined
-                    }
-                    className="login-input"
-                  />
+                          if (errors.password) {
+                            setErrors((current) => ({
+                              ...current,
+                              password: '',
+                              api: '',
+                            }))
+                          }
+                        }}
+                        placeholder="••••••••"
+                        aria-invalid={Boolean(errors.password)}
+                        aria-describedby={
+                          errors.password
+                            ? 'login-password-error'
+                            : undefined
+                        }
+                        className="login-input"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowPassword(
+                            (value) => !value,
+                          )
+                        }
+                        className="login-visibility"
+                        aria-label={
+                          showPassword
+                            ? 'Hide password'
+                            : 'Show password'
+                        }
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? (
+                          <EyeOff
+                            size={17}
+                            strokeWidth={1.6}
+                          />
+                        ) : (
+                          <Eye
+                            size={17}
+                            strokeWidth={1.6}
+                          />
+                        )}
+                      </button>
+                    </div>
+
+                    {errors.password && (
+                      <p
+                        id="login-password-error"
+                        className="login-field-error"
+                        role="alert"
+                      >
+                        {errors.password}
+                      </p>
+                    )}
+                  </div>
+
+                  <label className="login-check">
+                    <input type="checkbox" />
+                    <span>
+                      {t('auth.labels.keepSignedIn')}
+                    </span>
+                  </label>
 
                   <button
-                    type="button"
-                    onClick={() =>
-                      setShowPassword(
-                        (value) => !value,
-                      )
-                    }
-                    className="login-visibility"
-                    aria-label={
-                      showPassword
-                        ? 'Hide password'
-                        : 'Show password'
-                    }
-                    aria-pressed={showPassword}
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="login-submit"
                   >
-                    {showPassword ? (
-                      <EyeOff
-                        size={17}
-                        strokeWidth={1.6}
-                      />
-                    ) : (
-                      <Eye
-                        size={17}
-                        strokeWidth={1.6}
-                      />
-                    )}
+                    <span>
+                      {isSubmitting
+                        ? t('auth.buttons.signInLoading')
+                        : t('auth.buttons.signIn')}
+                    </span>
+
+                    <ArrowRight
+                      size={17}
+                      strokeWidth={1.9}
+                      aria-hidden="true"
+                    />
                   </button>
-                </div>
+                </>
+              ) : (
+                <>
+                  <div className="login-field">
+                    <label htmlFor="reg-name" className="login-label">
+                      {t('auth.registration.labels.fullName')}
+                    </label>
+                    <div className="login-input-row">
+                      <input
+                        id="reg-name"
+                        type="text"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        placeholder="Full Name"
+                        className="login-input"
+                        required
+                      />
+                    </div>
+                    {errors.name && <p className="login-field-error" role="alert">{errors.name}</p>}
+                  </div>
 
-                {errors.password && (
-                  <p
-                    id="login-password-error"
-                    className="login-field-error"
-                    role="alert"
+                  <div className="login-field">
+                    <label htmlFor="reg-email" className="login-label">
+                      {t('auth.registration.labels.email')}
+                    </label>
+                    <div className="login-input-row">
+                      <input
+                        id="reg-email"
+                        type="email"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        placeholder="name@phc.gov.in"
+                        className="login-input"
+                        required
+                      />
+                    </div>
+                    {errors.email && <p className="login-field-error" role="alert">{errors.email}</p>}
+                  </div>
+
+                  <div className="login-field">
+                    <label htmlFor="reg-password" className="login-label">
+                      {t('auth.registration.labels.password')}
+                    </label>
+                    <div className="login-input-row">
+                      <input
+                        id="reg-password"
+                        type="password"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="login-input"
+                        required
+                      />
+                    </div>
+                    {errors.password && <p className="login-field-error" role="alert">{errors.password}</p>}
+                  </div>
+
+                  <div className="login-field">
+                    <label htmlFor="reg-confirm" className="login-label">
+                      {t('auth.registration.labels.confirmPassword')}
+                    </label>
+                    <div className="login-input-row">
+                      <input
+                        id="reg-confirm"
+                        type="password"
+                        value={regConfirmPassword}
+                        onChange={(e) => setRegConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="login-input"
+                        required
+                      />
+                    </div>
+                    {errors.confirm && <p className="login-field-error" role="alert">{errors.confirm}</p>}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="login-submit"
                   >
-                    {errors.password}
-                  </p>
-                )}
-              </div>
-
-              <label className="login-check">
-                <input type="checkbox" />
-                <span>
-                  {t('auth.labels.keepSignedIn')}
-                </span>
-              </label>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="login-submit"
-              >
-                <span>
-                  {isSubmitting
-                    ? t('auth.buttons.signInLoading')
-                    : t('auth.buttons.signIn')}
-                </span>
-
-                <ArrowRight
-                  size={17}
-                  strokeWidth={1.9}
-                  aria-hidden="true"
-                />
-              </button>
+                    <span>
+                      {isSubmitting ? t('auth.registration.buttonLoading') : t('auth.registration.button')}
+                    </span>
+                    <ArrowRight
+                      size={17}
+                      strokeWidth={1.9}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </>
+              )}
             </form>
 
             <div className="login-form-foot">
-              <span>
-                {t('auth.footer.newToProgramme')}
-              </span>
+              {pageMode === 'login' ? (
+                <>
+                  <span>
+                    {t('auth.footer.newToProgramme')}
+                  </span>
 
-              <a
-                href="#"
-                className="login-link login-link-strong"
-                onClick={(event) =>
-                  event.preventDefault()
-                }
-              >
-                {t('auth.buttons.requestAccess', { role: t('auth.roles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')) })}
-              </a>
+                  <a
+                    href="#"
+                    className="login-link login-link-strong"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      setPageMode('register')
+                    }}
+                  >
+                    {t('auth.buttons.requestAccess', { role: t('header.roles.' + (selectedRole === 'clinician' ? 'clinician' : 'technician')) })}
+                  </a>
+                </>
+              ) : (
+                <a
+                  href="#"
+                  className="login-link login-link-strong"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    setPageMode('login')
+                  }}
+                >
+                  {t('auth.registration.backToLogin')}
+                </a>
+              )}
             </div>
           </div>
 
@@ -597,4 +760,3 @@ function LoginPage() {
 }
 
 export default LoginPage
-                

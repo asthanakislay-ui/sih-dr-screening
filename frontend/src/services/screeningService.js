@@ -99,13 +99,13 @@ export async function login(email, password) {
 /**
  * Backend Authentication: Register
  */
-export async function register(name, email, password) {
+export async function register(name, email, password, role) {
   let response
   try {
     response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, role }),
     })
   } catch (networkError) {
     throw new Error(`Could not reach the authentication service. Please check your internet connection. (${networkError.message})`)
