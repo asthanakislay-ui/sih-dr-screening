@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth.routes');
 const predictRoutes = require('./routes/predict.routes');
 const healthRoutes = require('./routes/health.routes');
 const screeningRoutes = require('./routes/screening.routes');
+const notificationRoutes = require('./routes/notification.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/predict', predictRoutes);
 app.use('/api/screenings', screeningRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

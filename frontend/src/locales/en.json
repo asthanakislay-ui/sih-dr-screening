@@ -23,6 +23,7 @@
       "technician": "Technician"
     },
     "notifications": {
+      "empty": "No new notifications",
       "n1_title": "New screening completed",
       "n1_desc": "Patient P-1024 · Moderate NPDR flagged for review.",
       "n2_title": "Pending review queue",
