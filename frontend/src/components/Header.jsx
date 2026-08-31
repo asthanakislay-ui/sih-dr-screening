@@ -4,33 +4,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useTranslation } from '../context/LanguageContext'
-
-const demoNotifications = [
-  {
-    id: 'n-1',
-    title: 'header.notifications.n1_title',
-    description: 'header.notifications.n1_desc',
-    time: 'header.notifications.time_now',
-  },
-  {
-    id: 'n-2',
-    title: 'header.notifications.n2_title',
-    description: 'header.notifications.n2_desc',
-    time: 'header.notifications.time_15m',
-  },
-  {
-    id: 'n-3',
-    title: 'header.notifications.n3_title',
-    description: 'header.notifications.n3_desc',
-    time: 'header.notifications.time_2h',
-  },
-  {
-    id: 'n-4',
-    title: 'header.notifications.n4_title',
-    description: 'header.notifications.n4_desc',
-    time: 'header.notifications.time_yesterday',
-  },
-]
+import {
+  fetchNotifications,
+  fetchUnreadCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead
+} from '../services/notificationService'
 
 function Header() {
   const { theme, toggleTheme } = useTheme()
@@ -38,8 +17,29 @@ function Header() {
   const { language, setLanguage, t } = useTranslation()
   const navigate = useNavigate()
 
+  const [notifications, setNotifications] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const [openPanel, setOpenPanel] = useState(null) // 'notifications' | 'profile' | 'language' | null
   const headerRef = useRef(null)
+
+  // Fetch notifications and unread count from the backend
+  async function updateNotifications() {
+    if (!session?.token) return
+    try {
+      const [notifsRes, countRes] = await Promise.all([
+        fetchNotifications(session.token),
+        fetchUnreadCount(session.token),
+      ])
+      setNotifications(notifsRes.data || [])
+      setUnreadCount(countRes.count || 0)
+    } catch (err) {
+      console.error('Failed to update notifications:', err)
+    }
+  }
+
+  useEffect(() => {
+    updateNotifications()
+  }, [session?.token])
 
   // Close any open popover on outside click or Escape.
   useEffect(() => {
@@ -63,6 +63,36 @@ function Header() {
 
   function toggle(panel) {
     setOpenPanel((current) => (current === panel ? null : panel))
+  }
+
+  async function handleMarkAllRead() {
+    if (!session?.token) return
+    try {
+      await markAllNotificationsAsRead(session.token)
+      setUnreadCount(0)
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    } catch (err) {
+      console.error('Failed to mark all as read:', err)
+    }
+  }
+
+  async function handleNotificationClick(notification) {
+    if (!session?.token) return
+    try {
+      if (!notification.isRead) {
+        await markNotificationAsRead(notification._id, session.token)
+        setUnreadCount((prev) => Math.max(0, prev - 1))
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === notification._id ? { ...n, isRead: true } : n))
+        )
+      }
+      if (notification.screeningId) {
+        navigate(`/analysis-result/${notification.screeningId}`)
+      }
+      setOpenPanel(null)
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err)
+    }
   }
 
   function handleSignOut() {
@@ -104,26 +134,45 @@ function Header() {
             className="retina-icon-btn relative flex size-10 items-center justify-center rounded-full"
           >
             <Bell size={17} strokeWidth={1.8} aria-hidden="true" />
-            <span className="header-bell-dot" aria-hidden="true" />
+            {unreadCount > 0 && (
+              <span className="header-bell-dot" aria-hidden="true" />
+            )}
           </button>
           {openPanel === 'notifications' && (
             <div className="header-popover header-popover--wide" role="dialog" aria-label="Notifications">
               <div className="header-popover-header">
                 <h3 className="header-popover-title">{t('header.notificationsTitle')}</h3>
-                <span className="header-popover-time">{t('header.notificationsNew', { count: demoNotifications.length })}</span>
+                <span className="header-popover-time">{t('header.notificationsNew', { count: unreadCount })}</span>
               </div>
               <ul className="header-popover-list">
-                {demoNotifications.map((notification) => (
-                  <li key={notification.id} className="header-popover-notification">
-                    <p className="header-popover-notification-title">{t(notification.title)}</p>
-                    <p className="header-popover-notification-desc">{t(notification.description)}</p>
-                    <span className="header-popover-time">{t(notification.time)}</span>
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <li
+                      key={notification._id}
+                      className={`header-popover-notification ${notification.isRead ? 'is-read' : ''}`}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <p className="header-popover-notification-title">{notification.title}</p>
+                      <p className="header-popover-notification-desc">{notification.description}</p>
+                      <span className="header-popover-time">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="p-4 text-center text-sm text-muted">
+                    {t('header.notifications.empty')}
                   </li>
-                ))}
+                )}
               </ul>
               <div className="header-popover-meta">
-                <span>{t('header.recentUpdates')}</span>
-                <span>{t('header.markAllRead')}</span>
+                <span className="cursor-default">{t('header.recentUpdates')}</span>
+                <span
+                  className="cursor-pointer hover:text-ink transition-colors"
+                  onClick={handleMarkAllRead}
+                >
+                  {t('header.markAllRead')}
+                </span>
               </div>
             </div>
           )}
@@ -193,10 +242,10 @@ function Header() {
             className="flex h-10 items-center gap-2.5 rounded-full border border-line bg-panel pl-1.5 pr-3 transition-colors hover:border-[#BFD3DB]"
           >
             <span className="flex size-7 items-center justify-center rounded-full bg-[rgba(18,199,200,0.12)] text-[11px] font-semibold text-[#0F7A7B]">
-              DS
+              {session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'US'}
             </span>
             <span className="hidden text-[12.5px] font-semibold tracking-[-0.005em] text-ink sm:inline">
-              Dr. Sharma
+              {session?.user?.name || 'User'}
             </span>
             <CircleUserRound size={14} strokeWidth={1.8} className="text-muted" aria-hidden="true" />
           </button>
@@ -205,10 +254,10 @@ function Header() {
               <div className="header-popover-header">
                 <div>
                   <p className="header-popover-title" style={{ textTransform: 'none', letterSpacing: 0 }}>
-                    Dr. Sharma
+                    {session?.user?.name || 'User'}
                   </p>
                   <p className="header-popover-time" style={{ marginTop: 2 }}>
-                    {session?.email || 'demo@retina.local'}
+                    {session?.email || 'user@retina.local'}
                   </p>
                 </div>
                 <span className="dashboard-meta-pill" style={{ padding: '3px 8px', fontSize: 10.5 }}>

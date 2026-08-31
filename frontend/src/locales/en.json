@@ -23,6 +23,7 @@
       "technician": "Technician"
     },
     "notifications": {
+      "empty": "No new notifications",
       "n1_title": "New screening completed",
       "n1_desc": "Patient P-1024 · Moderate NPDR flagged for review.",
       "n2_title": "Pending review queue",
@@ -228,7 +229,23 @@
     "footer": {
       "demo": "For research demonstration only · Not a certified medical device",
       "copyright": "© 2026 RETINA Consortium",
-      "builtInIndia": "Built in India"
+      "builtInIndia": "Built in India",
+      "newToProgramme": "New to the programme?"
+    },
+    "registration": {
+      "title": "SECURE REGISTRATION",
+      "subtitle": "Create your RETINA account.",
+      "description": "Join the network to start screening patients.",
+      "labels": {
+        "fullName": "Full Name",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm Password"
+      },
+      "button": "Create Account",
+      "buttonLoading": "Creating account...",
+      "backToLogin": "Already have an account? Sign in",
+      "success": "Account created successfully. You can now sign in."
     }
   },
   "common": {

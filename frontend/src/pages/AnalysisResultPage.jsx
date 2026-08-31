@@ -22,11 +22,11 @@ function mapDiagnosis(className, confidence, t) {
   const isReferable = classIdx >= REFERABLE_THRESHOLD
 
   const gradeMap = {
-    'No DR': t('analysis.grades.noDr'),
-    Mild: t('analysis.grades.mild'),
-    Moderate: t('analysis.grades.moderate'),
-    Severe: t('analysis.grades.severe'),
-    Proliferative: t('analysis.grades.proliferative'),
+    'No DR': t('history.grades.No DR'),
+    Mild: t('history.grades.Mild NPDR'),
+    Moderate: t('history.grades.Moderate NPDR'),
+    Severe: t('history.grades.Severe NPDR'),
+    Proliferative: t('history.grades.Proliferative DR'),
   }
 
   return {
@@ -162,6 +162,7 @@ function AnalysisResultPage() {
         ? mapDiagnosis(
             resultForReport.class_name,
             resultForReport.confidence,
+            t,
           )
         : null
 
@@ -170,7 +171,7 @@ function AnalysisResultPage() {
         : null
 
       const recommendation = diagnosis
-        ? getRecommendation(diagnosis.referable)
+        ? getRecommendation(diagnosis.referable, t)
         : null
 
       await openReportPrintDialog({
@@ -275,10 +276,12 @@ function AnalysisResultPage() {
   const diagnosis = mapDiagnosis(
     result.class_name,
     result.confidence,
+    t
   )
 
   const recommendation = getRecommendation(
     diagnosis.referable,
+    t
   )
 
   return (
@@ -519,29 +522,40 @@ function AnalysisResultPage() {
           </h3>
 
           <div className="mt-4 space-y-3">
-            {result.all_probs.map((prob, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-3"
-              >
-                <span className="w-[120px] text-[13px] font-medium text-ink">
-                  {t('history.grades.' + DR_CLASSES[idx])}
-                </span>
+            {result.all_probs.map((prob, idx) => {
+              const className = DR_CLASSES[idx]
+              const gradeKey = {
+                'No DR': 'No DR',
+                Mild: 'Mild NPDR',
+                Moderate: 'Moderate NPDR',
+                Severe: 'Severe NPDR',
+                Proliferative: 'Proliferative DR',
+              }[className] || className
 
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface">
-                  <div
-                    className="ar-prob-fill h-full bg-accent transition-all duration-300"
-                    style={{
-                      width: `${prob * 100}%`,
-                    }}
-                  />
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3"
+                >
+                  <span className="w-[120px] text-[13px] font-medium text-ink">
+                    {t('history.grades.' + gradeKey)}
+                  </span>
+
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface">
+                    <div
+                      className="ar-prob-fill h-full bg-accent transition-all duration-300"
+                      style={{
+                        width: `${prob * 100}%`,
+                      }}
+                    />
+                  </div>
+
+                  <span className="w-[50px] text-right font-mono text-[13px] text-ink">
+                    {Math.round(prob * 100)}%
+                  </span>
                 </div>
-
-                <span className="w-[50px] text-right font-mono text-[13px] text-ink">
-                  {Math.round(prob * 100)}%
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </section>
       )}

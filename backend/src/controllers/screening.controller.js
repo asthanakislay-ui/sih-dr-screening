@@ -1,4 +1,6 @@
 const Screening = require('../models/Screening');
+const Notification = require('../models/Notification');
+const User = require('../models/User');
 const fs = require('fs');
 const path = require('path');
 
@@ -61,6 +63,48 @@ const createScreening = async (req, res, next) => {
       },
       createdBy: req.userId,
     });
+
+    // ─── Notification Triggers ───────────────────────────────────────────────────
+    try {
+      const technicians = await User.find({ role: 'technician' });
+      const clinicians = await User.find({ role: 'clinician' });
+
+      const notifications = [];
+
+      // Notify Technicians
+      technicians.forEach((tech) => {
+        notifications.push({
+          userId: tech._id,
+          title: 'Screening Processed',
+          description: 'A new screening record has been successfully saved.',
+          type: 'SCREENING_PROCESSED',
+          screeningId: screeningDoc._id,
+        });
+      });
+
+      // Notify Clinicians
+      const isReferable = screening.referable === true || screening.referable === 'true';
+      clinicians.forEach((clinician) => {
+        notifications.push({
+          userId: clinician._id,
+          title: 'Review Required',
+          description: isReferable
+            ? `Urgent: A referable screening for ${patient.name} requires clinical review.`
+            : `A new screening for ${patient.name} is available for review.`,
+          type: 'REVIEW_REQUIRED',
+          screeningId: screeningDoc._id,
+        });
+      });
+
+      if (notifications.length > 0) {
+        await Notification.insertMany(notifications);
+      }
+    } catch (notificationError) {
+      console.error('Notification Trigger Error:', notificationError);
+      // We don't call next(notificationError) here to avoid failing the request
+      // if only notifications fail.
+    }
+    // ──────────────────────────────────────────────────────────────────────────────
 
     res.status(201).json({
       success: true,
