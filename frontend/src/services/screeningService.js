@@ -1,16 +1,9 @@
+
 // screeningService.js
 //
-// Thin service layer that talks to both the FastAPI AI service and the Node/Express backend.
-// Errors are surfaced to the caller as plain Error instances with helpful messages.
+// Service layer for the FastAPI AI service and Node/Express backend.
+// Authentication is temporarily bypassed for development/testing.
 
-export class UnauthorizedError extends Error {
-  constructor(message = 'Your session has expired. Please sign in again.') {
-    super(message)
-    this.name = 'UnauthorizedError'
-  }
-}
-
-// Use Vite environment variables with fallbacks for development
 const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'http://localhost:8000'
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000'
 
@@ -18,7 +11,10 @@ const PREDICT_URL = `${AI_BASE_URL}/predict`
 const API_URL = `${BACKEND_BASE_URL}/api`
 
 /**
- * Submit a fundus image to the FastAPI backend for DR grading + Grad-CAM overlay.
+ * Submit a fundus image to the FastAPI backend
+ * for DR grading + Grad-CAM overlay.
+ *
+ * This request does not require authentication.
  */
 export async function predictScreening(file) {
   if (!file) {
@@ -29,6 +25,7 @@ export async function predictScreening(file) {
   formData.append('file', file)
 
   let response
+
   try {
     response = await fetch(PREDICT_URL, {
       method: 'POST',
@@ -43,8 +40,10 @@ export async function predictScreening(file) {
 
   if (!response.ok) {
     let detail = ''
+
     try {
       const errBody = await response.json()
+
       if (errBody && errBody.detail) {
         detail =
           typeof errBody.detail === 'string'
@@ -52,13 +51,17 @@ export async function predictScreening(file) {
             : errBody.detail.error || JSON.stringify(errBody.detail)
       }
     } catch {
-      // body wasn't JSON; ignore
+      // Response wasn't JSON.
     }
 
-    const message = detail || `AI Service returned HTTP ${response.status} ${response.statusText}`
-    const err = new Error(message)
-    err.status = response.status
-    throw err
+    const message =
+      detail ||
+      `AI Service returned HTTP ${response.status} ${response.statusText}`
+
+    const error = new Error(message)
+    error.status = response.status
+
+    throw error
   }
 
   const data = await response.json()
@@ -74,46 +77,64 @@ export async function predictScreening(file) {
 }
 
 /**
- * Backend Authentication: Login
+ * Authentication functions are kept for future restoration.
+ * They are not required while authentication is bypassed.
  */
 export async function login(email, password) {
-  let response
-  try {
-    response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-  } catch (networkError) {
-    throw new Error(`Could not reach the authentication service. Please check your internet connection. (${networkError.message})`)
-  }
+  const response = await fetch(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }),
+  })
 
   if (!response.ok) {
-    const errBody = await response.json()
-    throw new Error(errBody.message || 'Login failed')
+    let message = 'Login failed'
+
+    try {
+      const errBody = await response.json()
+      message = errBody.message || message
+    } catch {
+      // Ignore invalid response body.
+    }
+
+    throw new Error(message)
   }
 
-  return response.json() // Returns { success, user, token }
+  return response.json()
 }
 
 /**
- * Backend Authentication: Register
+ * Register a new user.
+ *
+ * Kept for future authentication restoration.
  */
 export async function register(name, email, password, role) {
-  let response
-  try {
-    response = await fetch(`${API_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, role }),
-    })
-  } catch (networkError) {
-    throw new Error(`Could not reach the authentication service. Please check your internet connection. (${networkError.message})`)
-  }
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name,
+      email,
+      password,
+      role,
+    }),
+  })
 
   if (!response.ok) {
-    const errBody = await response.json()
-    throw new Error(errBody.message || 'Registration failed')
+    let message = 'Registration failed'
+
+    try {
+      const errBody = await response.json()
+      message = errBody.message || message
+    } catch {
+      // Ignore invalid response body.
+    }
+
+    throw new Error(message)
   }
 
   return response.json()
@@ -121,54 +142,70 @@ export async function register(name, email, password, role) {
 
 /**
  * Save a screening record to MongoDB.
- * Expects a FormData object containing the image and JSON fields.
+ *
+ * Authentication is temporarily bypassed.
+ * The token parameter is intentionally ignored so existing
+ * callers do not have to be changed immediately.
  */
-export async function saveScreening(formData, token) {
+export async function saveScreening(formData, _token) {
   let response
+
   try {
     response = await fetch(`${API_URL}/screenings`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
       body: formData,
     })
   } catch (networkError) {
-    throw new Error(`Could not reach the backend service to save the screening. Please check your connection. (${networkError.message})`)
+    throw new Error(
+      `Could not reach the backend service to save the screening. ` +
+        `Please check your connection. (${networkError.message})`,
+    )
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
-      throw new UnauthorizedError()
+    let message = 'Failed to save screening'
+
+    try {
+      const errBody = await response.json()
+      message = errBody.message || message
+    } catch {
+      // Ignore invalid response body.
     }
-    const errBody = await response.json()
-    throw new Error(errBody.message || 'Failed to save screening')
+
+    throw new Error(message)
   }
 
   return response.json()
 }
 
 /**
- * Fetch all screenings for the authenticated user.
+ * Fetch all screenings.
+ *
+ * Authentication is temporarily bypassed.
  */
-export async function getScreenings(token) {
+export async function getScreenings(_token) {
   let response
+
   try {
-    response = await fetch(`${API_URL}/screenings`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    })
+    response = await fetch(`${API_URL}/screenings`)
   } catch (networkError) {
-    throw new Error(`Could not reach the backend service to fetch screening history. (${networkError.message})`)
+    throw new Error(
+      `Could not reach the backend service to fetch screening history. ` +
+        `(${networkError.message})`,
+    )
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
-      throw new UnauthorizedError()
+    let message = 'Failed to fetch screenings'
+
+    try {
+      const errBody = await response.json()
+      message = errBody.message || message
+    } catch {
+      // Ignore invalid response body.
     }
-    const errBody = await response.json()
-    throw new Error(errBody.message || 'Failed to fetch screenings')
+
+    throw new Error(message)
   }
 
   return response.json()
@@ -176,29 +213,44 @@ export async function getScreenings(token) {
 
 /**
  * Fetch a single screening by ID.
+ *
+ * Authentication is temporarily bypassed.
  */
-export async function getScreeningById(id, token) {
+export async function getScreeningById(id, _token) {
   let response
+
   try {
-    response = await fetch(`${API_URL}/screenings/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    })
+    response = await fetch(`${API_URL}/screenings/${id}`)
   } catch (networkError) {
-    throw new Error(`Could not reach the backend service to fetch the screening result. (${networkError.message})`)
+    throw new Error(
+      `Could not reach the backend service to fetch the screening result. ` +
+        `(${networkError.message})`,
+    )
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
-      throw new UnauthorizedError()
+    let message = 'Failed to fetch screening details'
+
+    try {
+      const errBody = await response.json()
+      message = errBody.message || message
+    } catch {
+      // Ignore invalid response body.
     }
-    const errBody = await response.json()
-    throw new Error(errBody.message || 'Failed to fetch screening details')
+
+    throw new Error(message)
   }
 
   return response.json()
 }
 
-export const DR_CLASSES = ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative']
+export const DR_CLASSES = [
+  'No DR',
+  'Mild',
+  'Moderate',
+  'Severe',
+  'Proliferative',
+]
+
 export const REFERABLE_THRESHOLD = 2
+

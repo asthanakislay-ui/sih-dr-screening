@@ -1,9 +1,56 @@
-const jwt = require('jsonwebtoken');
+//temprary disabled auth middleware for testing purposes
+
+
+/* Authentication middleware
+ *
+ * TEMPORARY DEVELOPMENT MODE:
+ * Authentication is bypassed so the application can be used
+ * without login while the ML functionality is being developed.
+ *
+ * Original JWT authentication code is intentionally kept commented
+ * below so it can be restored later.
+ */
+
+const protect = (req, res, next) => {
+  // Temporary dummy user
+  req.userId = 'development-user';
+  req.userRole = 'clinician';
+
+  next();
+};
 
 /**
- * Middleware that validates a Bearer JWT and attaches req.userId.
- * Rejects with 401 if the token is missing, malformed, or expired.
+ * Role authorization is also kept functional.
+ * Since protect() provides the temporary "clinician" role,
+ * routes allowing clinicians will continue to work.
  */
+const authorize = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.userRole) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. User role not found.',
+      });
+    }
+
+    if (!allowedRoles.includes(req.userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Role ${req.userRole} is not authorized to access this resource.`,
+      });
+    }
+
+    next();
+  };
+};
+
+
+
+/*
+ORIGINAL JWT PROTECTION — RESTORE THIS WHEN AUTHENTICATION IS NEEDED:
+
+const jwt = require('jsonwebtoken');
+
 const protect = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -29,35 +76,13 @@ const protect = (req, res, next) => {
         message: 'Token has expired. Please log in again.',
       });
     }
+
     return res.status(401).json({
       success: false,
       message: 'Not authorized. Invalid token.',
     });
   }
 };
-
-/**
- * Middleware that restricts access to users with specific roles.
- * @param {string[]} allowedRoles - Array of roles allowed to access the route.
- */
-const authorize = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.userRole) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied. User role not found.',
-      });
-    }
-
-    if (!allowedRoles.includes(req.userRole)) {
-      return res.status(403).json({
-        success: false,
-        message: `Access denied. Role ${req.userRole} is not authorized to access this resource.`,
-      });
-    }
-
-    next();
-  };
-};
+*/
 
 module.exports = { protect, authorize };
