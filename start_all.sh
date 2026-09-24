@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start all services for SIH DR Screening
+# Start all services for SIH DR Screening (New Structure)
 
 set -e
 
@@ -9,57 +9,67 @@ echo "════════════════════════�
 echo "   SIH DR Screening - Starting All Services"
 echo "═══════════════════════════════════════════════"
 
-# 1. Start FastAPI (ML Service) on port 8000
-echo ""
-echo "🚀 Starting FastAPI ML service on port 8000..."
-cd "$PROJECT_ROOT"
-source venv/Scripts/activate
-python app.py &
-FASTAPI_PID=$!
-echo "   FastAPI PID: $FASTAPI_PID"
+# Check if docker-compose is available
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif command -v docker &> /dev/null && docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo "❌ Docker Compose not found. Please install Docker Compose."
+    exit 1
+fi
 
-# Wait for FastAPI to be ready
-echo "   Waiting for FastAPI to be ready..."
-for i in {1..30}; do
+echo ""
+echo "🚀 Starting all services with Docker Compose..."
+echo ""
+
+cd "$PROJECT_ROOT"
+$DOCKER_COMPOSE up --build -d
+
+echo ""
+echo "⏳ Waiting for services to be healthy..."
+
+# Wait for AI service
+echo "   Waiting for AI service (port 8000)..."
+for i in {1..60}; do
     if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-        echo "   ✅ FastAPI is ready!"
+        echo "   ✅ AI service is ready!"
         break
     fi
-    sleep 1
+    sleep 2
 done
 
-# 2. Start Express Backend on port 5000
-echo ""
-echo "🚀 Starting Express Backend on port 5000..."
-cd "$PROJECT_ROOT/backend"
-node src/server.js &
-EXPRESS_PID=$!
-echo "   Express PID: $EXPRESS_PID"
+# Wait for Backend service
+echo "   Waiting for Backend service (port 5000)..."
+for i in {1..30}; do
+    if curl -s http://localhost:5000/api/health > /dev/null 2>&1; then
+        echo "   ✅ Backend service is ready!"
+        break
+    fi
+    sleep 2
+done
 
-# 3. Start React Frontend on port 5173
-echo ""
-echo "🚀 Starting React Frontend on port 5173..."
-cd "$PROJECT_ROOT/frontend"
-npm run dev &
-VITE_PID=$!
-echo "   Vite PID: $VITE_PID"
+# Wait for Frontend service
+echo "   Waiting for Frontend service (port 5173)..."
+for i in {1..30}; do
+    if curl -s http://localhost:5173 > /dev/null 2>&1; then
+        echo "   ✅ Frontend service is ready!"
+        break
+    fi
+    sleep 2
+done
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "   All services started!"
+echo "   All services started successfully!"
 echo "═══════════════════════════════════════════════"
 echo ""
-echo "   FastAPI (ML):    http://localhost:8000"
-echo "   API Docs:        http://localhost:8000/docs"
-echo "   Express Backend: http://localhost:5000"
-echo "   Health:          http://localhost:5000/api/health"
-echo "   Frontend:        http://localhost:5173"
+echo "   🤖 AI Service (FastAPI):    http://localhost:8000"
+echo "   📚 API Docs:                http://localhost:8000/docs"
+echo "   ⚙️  Backend (Express):      http://localhost:5000"
+echo "   💚 Health Check:            http://localhost:5000/api/health"
+echo "   🌐 Frontend (React):        http://localhost:5173"
 echo ""
-echo "   Press Ctrl+C to stop all services"
+echo "   To stop:  docker-compose down"
+echo "   To logs:  docker-compose logs -f"
 echo "═══════════════════════════════════════════════"
-
-# Trap Ctrl+C to kill all processes
-trap "kill $FASTAPI_PID $EXPRESS_PID $VITE_PID 2>/dev/null; exit" INT TERM
-
-# Wait for all background processes
-wait

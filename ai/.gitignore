@@ -1,0 +1,47 @@
+# Python / AI Service
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Test outputs
+test_images/
+test_outputs/
+invalid.txt
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Distribution
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model weights (large files - use Git LFS or external storage)
+weights/*.pth
+!weights/.gitkeep
+
+# Jupyter
+.ipynb_checkpoints/
