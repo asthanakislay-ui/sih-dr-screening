@@ -39,9 +39,9 @@ build/
 .DS_Store
 Thumbs.db
 
-# Model weights (large files - use Git LFS or external storage)
-weights/*.pth
-!weights/.gitkeep
+# Model weights - tracked in repo for Docker build
+# weights/*.pth
+#!weights/.gitkeep
 
 # Jupyter
 .ipynb_checkpoints/
