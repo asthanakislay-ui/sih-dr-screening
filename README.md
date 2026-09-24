@@ -335,13 +335,3 @@ docker-compose logs -f frontend  # Frontend only
 ```
 
 ---
-
-## License
-
-This project was developed for the Smart India Hackathon (SIH). See individual service directories for third-party licenses.
-
----
-
-## Team
-
-Built by [Team Name] for SIH 2024/2025.
